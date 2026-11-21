@@ -31,7 +31,7 @@ const SECTIONS = [
  },
  {
   title: '7. Contact Us',
-  body: `If you have any questions about this Privacy Policy or ${APP_NAME}, please reach out at princeelorm17@gmail.com or visit github.com/Akarikev/nib.`,
+  body: `If you have any questions about this Privacy Policy or ${APP_NAME}, please reach out at princeelorm17@gmail.com or visit nib.elorm.xyz.`,
  },
 ];
 
