@@ -1,20 +1,72 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFonts } from 'expo-font';
+import { Fredoka_500Medium } from '@expo-google-fonts/fredoka/500Medium';
+import { Fredoka_600SemiBold } from '@expo-google-fonts/fredoka/600SemiBold';
+import { Nunito_600SemiBold } from '@expo-google-fonts/nunito/600SemiBold';
+import { Nunito_800ExtraBold } from '@expo-google-fonts/nunito/800ExtraBold';
+import { Room } from './src/components/room';
+import { Button, C, Coins, Icon, IconName, Label } from './src/components/ui';
+import { Notice, Toast } from './src/components/toast';
+import { Shop } from './src/components/shop';
+import { PrivacyPolicy } from './src/components/privacy';
+import { APP_NAME } from './src/config';
+import { adoptCat, Atmosphere, boostProject, buy, claim, claimMilestone, energyStatus, ENERGY_CAP, freshSave, ITEMS, MILESTONES, MilestoneId, multiplier, parseSave, progress, PROJECTS, Save, setAtmosphere, startProject, toggleDecoration } from './src/game/game';
+const KEY = 'pocket-dev.save.v1'; // Keep the original key so existing rooms survive updates.
+const projectIcons: Record<string, IconName> = { hello: 'terminal', bug: 'bug', site: 'code', game: 'game' };
+function Game() {
+ const insets = useSafeAreaInsets(); const [save, setSave] = useState<Save | null>(null); const saveRef = useRef<Save | null>(null); const busyRef = useRef(false);
+ const [celebrateUntil, setCelebrateUntil] = useState(0); const [busy, setBusy] = useState(false); const [now, setNow] = useState(Date.now()); const [shop, setShop] = useState(false); const [showPrivacy, setShowPrivacy] = useState(() => {
+  if (typeof window !== 'undefined' && window.location) {
+   return window.location.pathname.includes('privacy') || window.location.hash.includes('privacy') || window.location.search.includes('privacy');
+  }
+  return false;
+ }); const [notice, setNotice] = useState<Notice>(null); const [loadError, setLoadError] = useState(false); const noticeId = useRef(0);
+ const dismiss = useCallback(() => setNotice(null), []); const closeShop = useCallback(() => setShop(false), []);
+ function notify(text: string, error = false, icon: 'brain' | 'coin' = 'brain') { setNotice({ id: ++noticeId.current, text, error, icon }); }
+ async function load() { setLoadError(false); try { const raw = await AsyncStorage.getItem(KEY); const next = raw ? parseSave(raw) : freshSave(); saveRef.current = next; setSave(next); } catch { setLoadError(true); } }
+ useEffect(() => { load(); const interval = setInterval(() => setNow(Date.now()), 500); const listener = AppState.addEventListener('change', state => { if (state === 'active') setNow(Date.now()); }); return () => { clearInterval(interval); listener.remove(); }; }, []);
+ async function act(update: (s: Save) => Save, message: string, icon: 'brain' | 'coin' = 'brain') {
+  if (busyRef.current || !saveRef.current) return; busyRef.current = true; setBusy(true);
+  try { const next = update(saveRef.current); if (next === saveRef.current) return; await AsyncStorage.setItem(KEY, JSON.stringify(next)); saveRef.current = next; setSave(next); setNow(Date.now()); notify(message, false, icon); if (icon === 'coin') setCelebrateUntil(Date.now() + 2200); }
+  catch { notify('Couldn’t save. Free some storage and try again.', true); }
+  finally { busyRef.current = false; setBusy(false); }
+ }
+ if (!save) return <View style={s.loading}>{loadError ? <><Label>Your saved room couldn’t be opened. Your save has been kept safe.</Label><Button onPress={load}>Try again</Button></> : <><ActivityIndicator color={C.green} /><Label>Opening your little studio…</Label></>}</View>;
+ const p = progress(save, now); const active = save.active; const current = PROJECTS.find(x => x.id === active?.projectId); const ready = !!active && p >= 1;
+ const seconds = active ? Math.max(0, Math.ceil((active.startedAt + active.duration - now) / 1000)) : 0;
+ const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+ const energy = energyStatus(save, now);
+ const refillSeconds = energy.nextRechargeAt ? Math.max(0, Math.ceil((energy.nextRechargeAt - now) / 1000)) : 0;
+ const refillTime = `${Math.floor(refillSeconds / 60)}:${String(refillSeconds % 60).padStart(2, '0')}`;
+ function onItem(id: string) { const item = ITEMS.find(i => i.id === id)!; const owned = save!.owned.includes(id); const placed = save!.decorated.includes(id); act(s => owned ? toggleDecoration(s, id) : buy(s, id), owned ? placed ? `${item.name} tucked away.` : `${item.name} placed in your room.` : `${item.name} is yours. Make yourself at home!`); }
+ function onAtmosphere(id: Atmosphere) { act(s => setAtmosphere(s, id), id === 'sunny' ? 'A little sunshine for your studio.' : id === 'rainy' ? 'Rain outside. Cozy inside.' : 'The stars are out. Take it slow.'); }
+ function onMilestone(id: MilestoneId) { const m = MILESTONES.find(x => x.id === id)!; act(s => claimMilestone(s, id), `${m.name}! ${m.reward} bonus coins in your jar.`, 'coin'); }
+ if (showPrivacy) return <PrivacyPolicy onBack={() => { if (typeof window !== 'undefined' && window.history) window.history.pushState({}, '', '/'); setShowPrivacy(false); }} />;
+ const readyMilestones = MILESTONES.filter(m => !(save.milestones ?? []).includes(m.id) && m.check(save)).length;
+ return <View style={{ flex: 1, backgroundColor: C.bg }}><ScrollView contentInsetAdjustmentBehavior="never" contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 28, paddingHorizontal: 22, alignItems: 'center' }}>
+ <View style={{ width: '100%', maxWidth: 520, gap: 20 }}>
+  <View style={s.header}><View style={{ flexShrink: 1 }}><Label style={s.title}>{APP_NAME}<Label style={{ color: '#D69F6A', fontSize: 34 }}>.</Label></Label></View><View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}><View accessibilityLabel={`${energy.count} of ${ENERGY_CAP} energy${energy.nextRechargeAt ? `, next refill in ${refillTime}` : ', fully rested'}`} style={{ flexDirection: 'row', gap: 5, alignItems: 'center', backgroundColor: '#E6EEDC', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 20 }}><Icon name="coffee" size={18} color={C.green} /><Label style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, color: C.green }}>{energy.count}/{ENERGY_CAP}</Label></View><View style={s.wallet}><Coins amount={save.coins} /></View></View></View>
+  <View style={{ gap: 10 }}><Room working={!!active && !ready} celebrating={ready || now < celebrateUntil} catOwned={!!save.catOwned} owned={save.owned} decorated={save.decorated} atmosphere={save.atmosphere ?? 'sunny'} /><View style={s.roomCaption}><View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', flexShrink: 1 }}><View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: '#789B78' }} /><Label style={{ fontSize: 13, flexShrink: 1 }}>{ready ? 'A little victory awaits' : active ? 'In the zone' : 'Home sweet studio'}</Label></View><View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}><Icon name="trophy" size={13} color={C.muted} /><Label style={{ fontSize: 13, color: C.muted }}>{save.completed} shipped</Label></View></View>
+   <Pressable accessibilityRole="button" accessibilityLabel="Open upgrades shop" onPress={() => setShop(true)} style={({ pressed }) => [s.shopButton, { opacity: pressed ? .75 : 1 }]}><View style={{ width: 39, height: 39, borderRadius: 14, backgroundColor: '#F7E4D1', alignItems: 'center', justifyContent: 'center' }}><Icon name="shop" size={20} /></View><View style={{ flex: 1, gap: 2 }}><Label style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 15 }}>Upgrades</Label><Label style={{ color: C.muted, fontSize: 12 }}>{readyMilestones > 0 ? `${readyMilestones} milestone reward${readyMilestones > 1 ? 's' : ''} waiting` : 'A better desk. A cozier room.'}</Label></View>{readyMilestones > 0 && <View style={{ backgroundColor: '#F7EDCE', borderRadius: 12, paddingHorizontal: 9, paddingVertical: 4 }}><Label style={{ fontSize: 11, fontFamily: 'Nunito_800ExtraBold', color: C.gold }}>+{readyMilestones}</Label></View>}<Icon name="arrow" size={19} color={C.green} /></Pressable>
+  </View>
+  <View style={s.status}><View style={s.row}><View style={{ flex: 1 }}><Label style={s.eyebrow}>{ready ? 'NICELY DONE, LITTLE DEV' : active ? 'A LITTLE FOCUS' : 'MEET YOUR NEW ROOMMATE'}</Label><Label style={s.subtitle}>{ready ? 'Ready to ship!' : current ? current.name : 'Big dreams. Small steps.'}</Label></View><Icon name={ready ? 'trophy' : active ? 'keyboard' : 'heart'} size={29} color={ready ? C.gold : C.green} /></View>
+   {active ? <><View accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(p * 100) }} style={s.track}><View style={{ width: `${p * 100}%`, height: '100%', backgroundColor: '#83A68B', borderRadius: 20 }} /></View><View style={s.row}><Label style={{ fontSize: 12, color: C.muted, flex: 1 }}>{ready ? 'Your project is finished.' : 'Keeps going while you’re away.'}</Label>{ready ? <Coins amount={active.reward} small /> : <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}><Icon name="clock" size={14} color={C.muted} /><Label style={{ fontFamily: 'Nunito_800ExtraBold', fontVariant: ['tabular-nums'] }}>{time}</Label></View>}</View>{!ready && (active.boosted ? <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}><Icon name="coffee" size={15} color={C.green} /><Label style={{ fontSize: 12, color: C.green, flex: 1 }}>Boost used · your reward stays the same</Label></View> : <View style={{ gap: 7 }}><Button secondary icon="coffee" disabled={busy || energy.count === 0} onPress={() => act(s => boostProject(s, Date.now()), 'A little boost. 25% of the remaining time saved.')} >Boost · 1 energy</Button><Label style={{ textAlign: 'center', fontSize: 11, color: C.muted }}>{energy.count === 0 ? `Next energy in ${refillTime} · one every 30 min` : 'Remove 25% of the time left · once per project'}</Label></View>)}{ready && <Button icon="coin" disabled={busy} onPress={() => act(s => claim(s, Date.now()), `Shipped! ${active.reward} coins in your jar.`, 'coin')}>Collect {active.reward} coins</Button>}</> : <Label style={{ color: C.muted, lineHeight: 22 }}>Pick a small project. Settle into your day. Come back to coins, then make this room a little more you.</Label>}
+  </View>
+  <View style={{ gap: 12 }}><View style={s.row}><Label style={s.subtitle}>One small thing at a time</Label><Label style={{ color: C.muted, fontSize: 12 }}>{multiplier(save).toFixed(2)}× earnings</Label></View>
+  {PROJECTS.map(project => <View key={project.id} style={s.card}><View style={s.row}><View style={s.icon}><Icon name={projectIcons[project.id]} size={26} /></View><View style={{ flex: 1, gap: 4 }}><Label style={s.cardTitle}>{project.name}</Label><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}><View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}><Icon name="clock" size={13} color={C.muted} /><Label style={{ fontSize: 12, color: C.muted }}>{project.duration < 60000 ? '15 sec' : `${project.duration / 60000} min`}</Label></View><Coins amount={Math.round(project.reward * multiplier(save))} small /></View></View></View><Label style={{ color: C.muted, fontSize: 13 }}>{project.detail}</Label><Button secondary icon={!active ? 'arrow' : undefined} disabled={busy || !!active} onPress={() => act(s => startProject(s, project.id, Date.now()), 'Project started. Your little dev has it from here.')}>{active ? active.projectId === project.id ? ready ? 'Ready to collect above' : 'Working on this…' : 'One project at a time' : 'Start project'}</Button></View>)}
+  </View><View style={{ alignItems: 'center', gap: 6 }}><Icon name="heart" size={15} color={C.muted} /><Label style={{ textAlign: 'center', fontSize: 12, color: C.muted }}>Made for slow days & small wins.{'\n'}Saved on this device · No internet needed</Label><Pressable accessibilityRole="link" accessibilityLabel="Read Privacy Policy" onPress={() => { if (typeof window !== 'undefined' && window.history) window.history.pushState({}, '', '/privacy'); setShowPrivacy(true); }} style={({ pressed }) => ({ paddingVertical: 4, paddingHorizontal: 10, opacity: pressed ? .65 : 1 })}><Label style={{ fontSize: 12, color: C.green, fontFamily: 'Nunito_800ExtraBold' }}>Privacy Policy</Label></Pressable></View>
+ </View></ScrollView>
+ {!shop && <Toast notice={notice} onDismiss={dismiss} />}
+ <Shop open={shop} onClose={closeShop} save={save} busy={busy} onItem={onItem} onAtmosphere={onAtmosphere} onAdopt={() => act(adoptCat, 'A little friend. A little more home.')} onMilestone={onMilestone} notice={notice} onDismiss={dismiss} />
+ </View>;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+ const [fonts, error] = useFonts({ Fredoka_500Medium, Fredoka_600SemiBold, Nunito_600SemiBold, Nunito_800ExtraBold });
+ if (!fonts && !error) return <View style={s.loading}><ActivityIndicator color={C.green} /></View>;
+ return <SafeAreaProvider><StatusBar style="dark" /><Game /></SafeAreaProvider>;
+}
+const s = StyleSheet.create({ loading: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 20 }, header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }, eyebrow: { fontFamily: 'Nunito_800ExtraBold', fontSize: 9, letterSpacing: 1.5, color: C.muted, marginBottom: 5 }, title: { fontFamily: 'Fredoka_600SemiBold', fontSize: 34, letterSpacing: -.7 }, wallet: { paddingHorizontal: 15, paddingVertical: 10, borderRadius: 22, backgroundColor: '#F7EDCE' }, roomCaption: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 5, gap: 8 }, shopButton: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E6EBDE', borderRadius: 22, padding: 13, marginTop: 4 }, status: { backgroundColor: '#EEF3E7', borderRadius: 24, padding: 20, gap: 14 }, subtitle: { fontFamily: 'Fredoka_500Medium', fontSize: 21, flexShrink: 1 }, row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }, track: { height: 10, backgroundColor: '#DCE5D5', borderRadius: 20, overflow: 'hidden' }, card: { borderRadius: 24, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E9EEE2', padding: 18, gap: 13 }, icon: { width: 49, height: 49, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EBEFDD' }, cardTitle: { fontFamily: 'Nunito_800ExtraBold', fontSize: 16 } });

@@ -39,3 +39,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Local Expo connection QR
+/expo-go-qr.png
+
+# EAS Simulator session credentials
+.env.eas-simulator

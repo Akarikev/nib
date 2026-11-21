@@ -1,0 +1,27 @@
+# Secrets and local credentials
+.env*.local
+.env.eas-simulator
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+*service-account*.json
+google-services.json
+GoogleService-Info.plist
+
+# Dependencies and build output
+node_modules/
+.expo/
+dist/
+web-build/
+/ios
+/android
+
+# Research, review, and local artifacts
+research/
+review/
+store-assets/
+/expo-go-qr.png
+.agents/

@@ -1,41 +1,50 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+# Nib
 
-## Expo has changed — do not trust your training data
+- Offline, Android-first Expo SDK 57 / React Native game. Use **Bun and bunx exclusively** for packages and JS commands.
+- Final name: Nib. One seated human developer, optional adopted desk cat, one illustrated room, timed coding projects, coins, equipment and cosmetic furniture. Keep scope small; no accounts, servers, ads, payments, paid builds, or complex pet care.
+- Read `continual-learning.json` before resuming. Update this checkpoint and that file at meaningful milestones and before handoff or usage exhaustion.
+- Save actions must serialize and persist successfully before publishing state. Keep rewards idempotent. Never silently overwrite an unreadable save.
+- `src/config.json` owns the display name. `src/game/game.ts` owns pure economy logic. Artwork is editable SVG in `src/components/room.tsx`.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+## Checkpoint — 2026-10-11
+Polish implemented: warm gold animated safe-area top toasts (auto/manual dismiss); Lucide SVG icons including project and arrow icons; Upgrades modal shop with equipment/decor sections, coin jar/prices, equipped/placed/owned badges; free persisted Sunny/Rainy/Moonlit rooms with ambient motion; three-quarter working pose and front-facing idle cat. Manual safe-area padding prevents double top spacing. Existing save key/version preserved.
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+Eight economy/save tests and TypeScript pass. Android/web exports pass. Mobile-width browser purchase, badge, balance, toast dismissal, atmosphere/furniture persistence and poses verified. User confirmed Expo Go phone connection. A runtime error during dependency hot reload came from untransformed Worklets initializer data: restarted Metro with `--clear`; fresh iOS bundle contains compiled `__initData`. Final native reload/spacing confirmation and release-device motion feel remain. Server stays live at `exp://10.15.195.120:8081` (LAN may change). See continuation JSON.
 
-## Commands
+- After adding/removing native animation dependencies, restart Metro with `bunx expo start --lan --clear`; preserve saves. Use Lucide's supported `icons/*` subpath imports to keep bundles small.
+- Keep `contentInsetAdjustmentBehavior="never"` on the manually safe-area-padded main scroll view; avoid doubling the top inset.
+- Atmosphere is an optional save field so v1 saves remain readable. Never migrate by resetting saves.
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+Approved update: tiny human developer protagonist, plus adoptable desk cat purchased with earned coins. Human types/stretches/celebrates; cat naps near coffee/paws at keyboard. Preserve current pass first. Header tagline removed; default toast uses Brain, rewards Coins, errors Alert. Avoid sparkle motifs in feedback.
 
-```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
-```
+## Human developer checkpoint — 2026-10-11
+Handoff renamed to exact `continual-learning.json`, all references updated, no duplicate. Human developer/adoptable desk cat implemented. Adoption costs 100 earned coins, optional `catOwned` preserves v1 saves, and energy boosts are approved: cap 3, refill one every 30 minutes offline, spend one once per project to remove 25% of remaining time. Tutorial remains unapproved. Current live Expo Go URL responds at exp://10.15.195.120:8081.
 
-Run lint and typecheck before declaring any task done.
+Character layout: every SVG uses explicit absolute top/right/bottom/left edges in a shared 400×354 coordinate space. Never allow layered SVGs into normal flex flow. Default pose sits three-quarter toward computer; celebration briefly faces player.
 
-## Navigation & Routing
+Latest screenshot feedback resolved: avoid dark hair/glasses bands over face. Default rear three-quarter head has a clean warm skin profile facing monitor; chair seat at hips, back visible in front of torso, bent knees and grounded feet. Do not revert to a front-facing idle pose or side perch.
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+Celebration fix: never reuse seated pelvis/legs and foreground chair back for a front-facing victory. Dedicated standing lower body, entire figure offset 46 SVG units right, chair back drawn behind in room. Typing/seated pose unchanged. Reduced motion holds final pose without bounce. Phone and desktop browser celebration reviewed; final physical-phone acceptance remains pending.
 
-## Building with EAS
+Seated leg silhouette fix: two separate bent thighs/knees/shins toward desk, matching shoes aligned below knees. Chair support is thinner/lighter, behind and left of legs, caster base below shoes with visible gap. Do not align shoes with caster strokes or reuse standing legs. Actual idle/typing lower-body crops checked at phone and desktop widths.
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+## Resume — 2026-10-26
+Existing Expo process reused on port 8081. Browser http://localhost:8081; current LAN Expo Go exp://192.168.12.108:8081, QR regenerated at expo-go-qr.png. Both localhost HTML and LAN Android manifest return HTTP 200. Older LAN addresses above are historical. User exploring free downloadable animated character assets; replacement is NOT approved. Hand/leg appearance remains under discussion despite prior silhouette fixes; await screenshot. No source/assets/dependencies or saves changed. Bundled transparent 2D sprite sheets are the simplest likely integration with this flat SVG room; rigged 2D/3D would add runtime and art-direction work.
 
-## Rules
+## Asset investigation — 2026-10-26
+User approved replacing human with a vetted free soft-cartoon full-body animation set only if it genuinely includes seated typing/idle/celebration. No qualifying complete set found. See research/character-assets/README.md. Official Kenney Toon Characters archive and 45 Male Person poses inspected, CC0 License.txt/contact sheet retained, but no seated typing. Dev Typer public six-frame preview inspected; full download gated by account and matching celebration absent. RhosGFX listing mostly single poses. LimeZu free license is noncommercial-only. Klimmos typing kit is paid pixel art and V1/V2 states are separate; no purchase made. Current implementation/saves untouched. Await user direction before custom missing poses, behavior compromises, paid asset purchase, pixel-art room or rigged/3D switch. Preview remains exp://192.168.12.108:8081, localhost HTML and LAN manifest HTTP 200.
 
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+## Active direction — own-art typing still, 2026-10-26
+User chose KEEP OUR OWN soft-cartoon character; external replacement abandoned. Rebuilt neutral seated typing as SeatedTypingStill in developer.tsx: single SVG, raised shoulders, closed shoulder/elbow/forearm silhouettes, both palms at keyboard y=200..207. NO independent limb transforms or new typing animation. Idle also holds this neutral still while review is pending; existing standing celebration remains separate and unchanged. Preserve room/cat/saves/economy. Actual SVG-source renders at review/typing-still/desktop-source-render.png and mobile-source-render.png are inspected but are NOT browser screenshots. Browser tabs remain connection-error/data documents after parent reopened localhost; protocol gate blocked observation, so no bypass or repeated captures. TypeScript passed, export pending; final user/phone visual approval remains required before adding motion.
+
+Typing-still final checks: TypeScript, git diff --check, Android Hermes/web exports PASS. Localhost HTML and LAN Expo manifest HTTP 200. Source renders are ready for review; actual browser/phone screenshot and user pose approval remain pending. Do not describe build success as visual approval.
+
+## Approved still + subtle motion — 2026-10-26
+User approved desktop/mobile still renders: “I think they look good now”. Geometry is frozen. Added Reanimated SVG opacity-only finger/key contact cues when working, plus occasional blink in working/idle. No arm/palm/body transforms, no idle swing, no new geometry movement; existing celebration unchanged. Reduced motion restores exact approved still, no loops. Effect cleanup cancels values on working changes/unmount. Pixel check of idle/reduced-motion source render vs approved PNG: 0 changed channels of 956800. TypeScript and Android/web export PASS. review/typing-motion contains illustrative source frames/GIF, NOT actual app captures. Browser inventory remains connection-error state; no bypass, actual runtime transitions/phone reduced-motion setting untested. Keep Expo Go live exp://192.168.12.108:8081; gameplay/saves/cat/energy unchanged.
+
+## EAS Simulators check, features & store release prep — 2026-11-21
+Read `eas/simulators/get-started.md` and `skills.md`; installed 25 official Expo Skills into `.agents/skills/` via `bunx skills add expo/skills -y -a antigravity` and upgraded global `eas-cli` to 27.11.0 via Bun. Linked project to EAS under owner `elormtsx` (`@elormtsx/nib`, projectId `b5ee4920-1b18-4ab4-8bd6-b6b275ccb61a`). Checked `eas simulator:availability --json`: returned `{"available": false, "accountName": "elormtsx"}` (Free plan has no Expo Simulators access), so per `eas-simulator` skill rules did not call `simulator:start`. Added `.env.eas-simulator` to `.gitignore` and `.easignore`.
+
+Added backward-compatible Warm desk lamp decoration (`lamp`, 65 coins, SVG amber glow on desk) and four one-time claimable Studio Milestones (`first-ship`, `steady-hands`, `cozy-nook`, `best-friend`) with Upgrades badge notification. 15 Bun tests (61 assertions), TypeScript, and Android/web export PASS. Configured `app.config.ts` (`version: 1.0.0`, `owner: elormtsx`, `com.nib.game`), `eas.json` (remote version source, Android `app-bundle` production profile, internal track draft submit profile), and `.easignore`. Android production AAB build on EAS (`3aca056e-f4ea-43fb-a4cf-4efdfc33b1b2`, versionCode 2, remote keystore generated) FINISHED and is ready for Google Play Console upload. Generated complete Google Play Store graphic kit in `store-assets/` via `scripts/make-store-assets.ts` (`bun run store-assets`): `play-store-icon-512x512.png`, `feature-graphic-1024x500.png`, four `1080x1920` phone screenshots, and `store-assets/README.md` listing copy.
+
+Added in-app & web Privacy Policy (`src/components/privacy.tsx`, `public/privacy.html`) and deployed live to EAS Hosting at `https://elormtsx-nib.expo.app` and `https://elormtsx-nib.expo.app/privacy` (HTTP 200). Created and pushed GitHub repositories `Akarikev/nib` and `Akarikev/nib-site`.

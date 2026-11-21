@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-21",
+  "project": "Nib",
+  "goals": [
+    "Build a beautiful Android-first offline idle game locally",
+    "One seated human developer in one room, optional adopted desk cat; timed coding projects earn coins",
+    "No accounts, servers, ads, payments, sensitive permissions, or paid cloud builds"
+  ],
+  "constraints": [
+    "Use Bun/bunx only",
+    "Keep implementation and saves small",
+    "Update AGENTS.md and this file at meaningful milestones and before handoff"
+  ],
+  "decisions": {
+    "name": "Nib (user approved)",
+    "sdk": "Expo 57 stable, React Native 0.86.3; SDK 58 remains beta per official Expo pages",
+    "art": "Custom editable SVG, ginger cat, mint and peach room",
+    "fonts": "Bundled Fredoka and Nunito",
+    "storage": "AsyncStorage; persist before updating UI, serialized actions",
+    "offline": "Stored start timestamp and duration, no background service",
+    "polish": "Lucide rounded SVG icons; Reanimated UI-thread toast/sheet/ambient motion; modal shop, two sections, free selectable room moods",
+    "characterUpdate": {
+      "protagonist": "Tiny human, dark curls, warm skin, sage hoodie",
+      "companion": "Desk cat adopted once for 100 earned coins; no earnings modifier or care mechanics",
+      "save": "Optional catOwned boolean; original v1 key preserved",
+      "pose": "Rear three-quarter seated toward monitor; clean skin profile without glasses/hair overlap. Chair back overlays torso, seat at hips, knees bend and feet reach floor. Brief front-facing celebration.",
+      "celebration": "Dedicated standing pelvis/two legs/feet, entire connected figure offset 46 SVG units right of chair; chair back drawn in room behind figure only for celebration. Working seated pose unchanged.",
+      "currentDirection": "Own soft-cartoon SVG character retained. Neutral seated typing is one complete static SVG; idle holds same still while awaiting review. Existing celebration untouched."
+    },
+    "energy": {
+      "cap": 3,
+      "refill": "One per 30 minutes, timestamp based including offline time",
+      "boost": "One energy once per project removes 25% of remaining time; reward unchanged",
+      "payments": false
+    }
+  },
+  "architecture": {
+    "App.tsx": "Screen, tabs, save lifecycle and transaction lock",
+    "src/game/game.ts": "Pure catalog and economy transitions",
+    "src/game/game.test.ts": "Bun economy tests",
+    "src/components/room.tsx": "Animated SVG room and furniture",
+    "src/config.json": "Single display-name source",
+    "app.config.ts": "Expo Android/web config",
+    "scripts/make-icons.ts": "Generate PNG icon from source SVG",
+    "src/components/ui.tsx": "Shared rounded Lucide icons, coin view, owned badges, button and label",
+    "src/components/toast.tsx": "Small safe-area top notification, auto and manual dismissal, reduced motion",
+    "src/components/shop.tsx": "Modal bottom sheet with balance, equipment, room decor and mood selection"
+  },
+  "completed": [
+    "Four projects from 15 seconds to 30 minutes",
+    "Elapsed offline progress and single reward claim",
+    "Two earnings upgrades and three cosmetic decorations",
+    "Toggle purchased furniture",
+    "Local save, load retry, error notice and save lock",
+    "Reduced-motion-aware animated cat",
+    "Custom icon and bundled fonts",
+    "Final Nib branding, renamed folder, README, AGENTS.md and continuation checkpoint",
+    "Gold coin-style animated top toasts with auto/manual dismissal",
+    "Lucide rounded icons and arrow buttons; supported per-icon imports",
+    "Upgrades modal sheet with balance, prices, clear equipped/placed/owned badges",
+    "Sunny/Rainy/Moonlit free persisted atmospheres and subtle ambient motion",
+    "Side-facing coding cat, player-facing idle cat",
+    "Single manual safe-area padding fixes excess top spacing",
+    "Removed header tagline; Brain default toast icon, coin reward icon and alert error icon; removed sparkle feedback motifs",
+    "Human developer and 100-coin adopted desk cat",
+    "Backward-compatible offline energy and once-per-project remaining-time boost",
+    "Fixed disconnected character layers using explicit absolute SVG edges",
+    "Added Warm desk lamp decoration and one-time claimable Studio Milestones with backward-compatible v1 save validation",
+    "Installed Expo Skills, linked @elormtsx/nib on EAS, verified simulator:availability (false on Free plan), configured eas.json/.easignore, and completed Android production AAB build 3aca056e-f4ea-43fb-a4cf-4efdfc33b1b2 (FINISHED)",
+    "Created scripts/make-store-assets.ts and generated Google Play Store assets in store-assets/ (512x512 icon, 1024x500 feature graphic, four 1080x1920 9:16 phone screenshots, and store listing copy)",
+    "Added Privacy Policy view (src/components/privacy.tsx and public/privacy.html), deployed live to EAS Hosting at https://elormtsx-nib.expo.app/privacy, and pushed GitHub repositories Akarikev/nib and Akarikev/nib-site"
+  ],
+  "inProgress": [
+    "Ready for user to upload finished AAB build 3aca056e-f4ea-43fb-a4cf-4efdfc33b1b2 and store-assets/*.png to Google Play Console."
+  ],
+  "verification": {
+    "bun test src/game/game.test.ts": "PASS: 15 tests, 61 assertions including adoption, energy offline refill, cap, rollback, boost, warm desk lamp, and studio milestones",
+    "bunx expo export --platform android --platform web": "See bun run export",
+    "bun run typecheck": "PASS approved-pose opacity-only typing/idle motion",
+    "bunx expo-doctor": "20/21 checks pass; sole failure is remote Expo config schema fetch (ENOTFOUND exp.host)",
+    "browser": "PASS at mobile width: plant purchase deducts 35; In your room badge and equipped keyboard badge; disabled insufficient balance; rainy/moonlit selection; reload retains balance/plant/moonlit; auto and manual toast dismissal; gold toast appearance; coding pose; compact top layout; final Brain/gold toast shown and manually dismissed; tagline absent; project terminal/bug/code icons visible; final reload restores ready reward; no new runtime errors after native-only SVG prop warning fix",
+    "bun run export": "PASS opacity-only motion: Android Hermes 2.8MB, web 1.4MB",
+    "bunx expo install --check": "PASS, dependencies up to date",
+    "git diff --check": "PASS",
+    "characterBrowser": "PASS at 363\u00d7728 and 1024\u00d7850: connected head/body/arms, seated toward computer, visible celebration. Boost changes 3/3 to 2/3, remaining time drops by 25%, button replaced with used state. Refined after screenshot feedback: removed dark face overlap, rear head silhouette, proper chair seat/back and grounded feet; adopted cat visible, adoption deducts exactly 100 (178 to 78) and removes purchase button. Final typing/celebration frames checked after seat and feet correction.",
+    "nativeCharacter": "Native layout corrected with explicit absolute edges; physical Expo Go visual confirmation remains pending."
+  },
+  "limitations": [
+    "Export verifies JS/Hermes bundles, not APK compilation",
+    "Device wall clock drives offline progress; changing clock can advance a project",
+    "Device-local save only; uninstall clears progress",
+    "No Play Store publishing or approval guarantee",
+    "Phone Expo Go connection confirmed, but final native visual/motion acceptance not directly observable",
+    "No release-build motion performance validation on a slow physical device"
+  ],
+  "nextSteps": [
+    "Verify subtle contacts and blink on physical Expo Go; check working/idle/celebration transitions and reduced motion",
+    "Preserve approved connected pose geometry; no independently translated limb layers"
+  ],
+  "path": "/home/elorm/Desktop/projects/nib",
+  "preview": {
+    "url": "http://localhost:8081",
+    "command": "Reuse existing Expo process 5843 on port 8081; restart with bunx expo start --lan --port 8081 only if needed",
+    "status": "Reused existing Expo server 2026-10-26; localhost HTML and LAN Android manifest both HTTP 200",
+    "expoGoUrl": "exp://192.168.12.108:8081",
+    "qrArtifact": "/home/elorm/Desktop/projects/nib/expo-go-qr.png"
+  },
+  "phoneFeedback": {
+    "connected": true,
+    "reported": [
+      "Large empty top space",
+      "Missing Hello world and bug icons",
+      "Use real arrow icons"
+    ],
+    "implementedFixes": [
+      "Manual safe-area padding, automatic inset disabled",
+      "Explicit Lucide SVG project and arrow icons"
+    ]
+  },
+  "runtimeIncident": {
+    "error": "Cannot read property code of undefined during dependency hot reload",
+    "evidence": "Worklets NativeWorklets initializer accesses installValueUnpacker.__initData.code; original server predated added worklets plugin; browser also reported no plugin",
+    "fix": "Restarted Metro with --lan --clear on same port; fresh iOS bundle contains compiled initializer worklet data; browser restored without changing saves",
+    "deviceConfirmation": "Phone connection confirmed before incident; final reload confirmation still pending",
+    "additionalNote": "Nonblocking web SVG accessible=false DOM warning removed by omitting native-only attribute on web"
+  },
+  "plannedNextUpdate": {
+    "approvedByUser": true,
+    "scope": "Tiny human developer protagonist plus adoptable desk cat purchased with earned coins plus offline energy boosts",
+    "humanActions": [
+      "typing",
+      "stretching",
+      "celebrating"
+    ],
+    "catActions": [
+      "naps near coffee",
+      "paws at keyboard"
+    ],
+    "status": "Implemented and browser/bundle verified"
+  },
+  "handoffFilename": "continual-learning.json",
+  "celebrationFix": {
+    "cause": "Front-facing celebration reused seated lower body and foreground chair back, obscuring torso/hips and making legs appear inside chair.",
+    "fix": "Separate standing lower-body SVG; no foreground chair back; chair remains behind in room; whole character moves as one connected coordinate system. Small UI-thread raised-arm/bounce; reduced motion holds raised arms with no bounce.",
+    "verified": "PASS: actual standing celebration frames at 363\u00d7728 and 1024\u00d7850; collect exits to idle, next project restores original seated typing, completion re-enters standing celebration. Reduced-motion source inspected: no bounce/loops, final arm lift held; device setting not directly exercised.",
+    "physicalPhone": "Pending; live Expo Go preserved"
+  },
+  "seatedLegFix": {
+    "cause": "Seated leg outlines and splayed shoe strokes merged visually with central chair stem and base.",
+    "fix": "Two individually drawn bent thighs/knees/shins toward desk, matching shoes beneath knees; both legs right of chair support. Lighter thinner chair stem moved behind/left, caster base below shoes with clear gap. Standing celebration untouched.",
+    "verified": "Actual lower-body crops reviewed at 363\u00d7728 and 1024\u00d7850 in idle and typing; two legs and shoes separate from support. TypeScript and final Android/web export passed (Hermes 2.8MB/web 1.4MB).",
+    "physicalPhone": "Pending; Expo Go kept alive; saves unchanged"
+  },
+  "assetExploration": {
+    "status": "Archived: user chose KEEP OWN soft-cartoon character; external replacement abandoned. Research retained only as history.",
+    "report": "research/character-assets/README.md",
+    "verifiedDownload": {
+      "source": "https://kenney.nl/assets/toon-characters",
+      "license": "CC0; original License.txt retained; credit Kenney / kenney.nl",
+      "evidence": "All 45 Male Person full-body pose PNGs inspected; contact sheet retained. Idle/cheer present, seated typing absent."
+    },
+    "otherLeads": [
+      "Dev Typer: six seated typing preview frames inspected; publisher states commercial permission, full archive requires account; no matching celebration identified",
+      "RhosGFX Character Template: primary listing only, mostly one-frame poses, no listed typing loop",
+      "LimeZu free Modern Interiors: noncommercial-only, reject for commercial game",
+      "Klimmos V2: paid pixel-art typing/wave/run; V1 idle/sit separate; no purchase/archive inspection"
+    ],
+    "next": "No external replacement. Rebuild and review neutral seated typing still before animation.",
+    "preserved": "All source/runtime assets, dependencies, local saves, cat, energy, economy, shop, moods untouched. Expo browser/LAN manifest HTTP 200. No runtime changes, so no new native export claimed."
+  },
+  "typingStillReview": {
+    "scope": "Approved neutral geometry frozen; subsequent subtle opacity-only motion authorized and implemented.",
+    "source": "src/components/developer.tsx: SeatedTypingStill, routed separately from LegacyCelebration",
+    "changes": "Raised shoulder line to keyboard geometry; closed continuous sleeve contours through shoulders/elbows/forearms; two palms at key surface. One SVG coordinate system and no independent transforms. Preserve curly hair/skin/hoodie, existing legs/chair, room/cat, all economy and saves.",
+    "artifacts": [
+      "review/typing-still/desktop-source-render.png",
+      "review/typing-still/mobile-source-render.png",
+      "review/typing-still/source-render.svg",
+      "review/typing-still/README.md"
+    ],
+    "artifactType": "Faithful direct renders from actual JSX paths with static room props, NOT browser or physical-phone screenshots.",
+    "visualInspection": "Source renders inspected: connected body/arms, palms at keyboard, chair support separate. Far hand is foreshortened/partly occluded; user acceptance pending.",
+    "browserBlocker": "Existing browser connection-error/data documents blocked protocol access; parent reopened localhost, inventory still showed connection errors. No bypass. No app screenshot verification claimed.",
+    "checks": "PASS: TypeScript, git diff --check, Android Hermes export 2.8MB, web export 1.4MB; localhost HTML and LAN Expo manifest HTTP 200. Browser/phone screenshot verification remains blocked/unavailable.",
+    "approval": "APPROVED by user 2026-10-26: \u201cI think they look good now\u201d, after reviewing desktop/mobile source renders."
+  },
+  "typingMotion": {
+    "status": "Implemented, source-render and bundle verified; browser/native runtime feel pending",
+    "geometry": "Approved shoulders/sleeves/elbows/palms/body/legs unchanged. Idle/reduced-motion source render pixel comparison: 0 changed channels of 956800 against approved still.",
+    "working": "Finger crease and tiny key-contact opacity, two pairs of 120ms contacts then 750ms pause. No limb/hand translation.",
+    "idle": "4.8s hold then 80ms/120ms blink, shared with working; no arm swing.",
+    "reducedMotion": "Reset shared values, hidden key marks, full original crease/eye opacity, no loops. Cleanup cancels tap and blink on props change/unmount.",
+    "celebration": "Existing separate standing celebration unchanged; branch unmount/remount avoids detached cross-pose interpolation.",
+    "evidence": "review/typing-motion/README.md; tap-a/tap-b/blink/idle PNGs; illustrative typing-contact-preview.gif from source, not browser/native capture.",
+    "checks": "TypeScript, diff check, Android Hermes 2.8MB and web 1.4MB exports PASS; localhost HTML and LAN manifest HTTP 200.",
+    "limitations": "Browser inventory still shows connection errors; no bypass. Actual browser/mobile-width playback, runtime transitions and native reduced-motion setting not exercised."
+  }
+}
