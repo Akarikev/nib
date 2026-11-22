@@ -6,6 +6,7 @@ export const PROJECTS = [
 ];
 export const ITEMS = [
   { id: 'keyboard', name: 'Clicky keyboard', description: '+25% project earnings', price: 60, slot: 'equipment', bonus: .25 },
+  { id: 'headphones', name: 'Cozy headphones', description: '+35% project earnings', price: 140, slot: 'equipment', bonus: .35 },
   { id: 'monitor', name: 'Dream monitor', description: '+50% project earnings', price: 240, slot: 'equipment', bonus: .5 },
   { id: 'plant', name: 'Leafy roommate', description: 'A little green on the windowsill', price: 35, slot: 'window', bonus: 0 },
   { id: 'lamp', name: 'Warm desk lamp', description: 'A soft amber glow for late hours', price: 65, slot: 'desk', bonus: 0 },
@@ -17,6 +18,7 @@ export const MILESTONES = [
  { id: 'steady-hands', name: 'Steady rhythm', detail: 'Ship 3 projects', reward: 50, check: (s: Save) => s.completed >= 3 },
  { id: 'cozy-nook', name: 'Cozy corner', detail: 'Own 2 upgrades or decor pieces', reward: 60, check: (s: Save) => s.owned.length >= 2 },
  { id: 'best-friend', name: 'Warm company', detail: 'Adopt the desk cat', reward: 75, check: (s: Save) => !!s.catOwned },
+ { id: 'dream-studio', name: 'Full studio', detail: 'Collect 5 upgrades or decor pieces', reward: 120, check: (s: Save) => s.owned.length >= 5 },
 ] as const;
 export type MilestoneId = typeof MILESTONES[number]['id'];
 export const ATMOSPHERES = [
@@ -28,7 +30,7 @@ export type Atmosphere = typeof ATMOSPHERES[number]['id'];
 export const DESK_CAT = { name: 'Desk cat', price: 100, description: 'A sleepy ginger friend for your coffee breaks.' };
 export const ENERGY_CAP = 3;
 export const ENERGY_REFILL_MS = 30 * 60_000;
-export type Save = { milestones?: MilestoneId[]; energy?: { count: number; rechargedAt: number }; catOwned?: boolean; atmosphere?: Atmosphere; version: 1; coins: number; completed: number; owned: string[]; decorated: string[]; active: null | { projectId: string; startedAt: number; duration: number; reward: number; boosted?: boolean } };
+export type Save = { onboarded?: boolean; milestones?: MilestoneId[]; energy?: { count: number; rechargedAt: number }; catOwned?: boolean; atmosphere?: Atmosphere; version: 1; coins: number; completed: number; owned: string[]; decorated: string[]; active: null | { projectId: string; startedAt: number; duration: number; reward: number; boosted?: boolean } };
 export const freshSave = (): Save => ({ version: 1, coins: 0, completed: 0, owned: [], decorated: [], active: null });
 export function multiplier(save: Save) { return 1 + ITEMS.filter(i => save.owned.includes(i.id)).reduce((n, i) => n + i.bonus, 0); }
 export function startProject(save: Save, id: string, now: number): Save {
@@ -87,8 +89,12 @@ export function claimMilestone(save: Save, id: MilestoneId): Save {
  if (!milestone || claimed.includes(id) || !milestone.check(save)) return save;
  return { ...save, coins: save.coins + milestone.reward, milestones: [...claimed, id] };
 }
+export function completeOnboarding(save: Save): Save {
+ return save.onboarded ? save : { ...save, onboarded: true };
+}
 export function parseSave(raw: string): Save {
   const s = JSON.parse(raw);
+  if (s.onboarded !== undefined && typeof s.onboarded !== 'boolean') throw Error('Invalid onboarding');
   const validMilestoneIds: string[] = MILESTONES.map(m => m.id);
   if (s.milestones !== undefined && (!Array.isArray(s.milestones) || new Set(s.milestones).size !== s.milestones.length || s.milestones.some((x: string) => !validMilestoneIds.includes(x)))) throw Error('Invalid milestones');
   if (s.energy !== undefined && (!s.energy || !Number.isInteger(s.energy.count) || s.energy.count < 0 || s.energy.count > ENERGY_CAP || !Number.isFinite(s.energy.rechargedAt) || s.energy.rechargedAt < 0)) throw Error('Invalid energy');

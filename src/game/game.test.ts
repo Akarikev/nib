@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { adoptCat, boostProject, claimMilestone, energyStatus, ENERGY_REFILL_MS, multiplier, refillEnergy, buy, claim, freshSave, parseSave, progress, setAtmosphere, startProject, toggleDecoration } from './game';
+import { adoptCat, boostProject, claimMilestone, completeOnboarding, energyStatus, ENERGY_REFILL_MS, multiplier, refillEnergy, buy, claim, freshSave, parseSave, progress, setAtmosphere, startProject, toggleDecoration } from './game';
 describe('offline project loop', () => {
  test('progress survives serialization and rewards exactly once', () => {
   const active = startProject(freshSave(), 'hello', 1000);
@@ -103,5 +103,15 @@ describe('warm desk lamp and studio milestones', () => {
   expect(loaded.milestones).toEqual(['first-ship']);
   expect(() => parseSave(JSON.stringify({ ...loaded, milestones: ['first-ship', 'first-ship'] }))).toThrow();
   expect(() => parseSave(JSON.stringify({ ...loaded, milestones: ['unknown'] }))).toThrow();
+ });
+ test('cozy headphones boost earnings and onboarding state persists safely', () => {
+  const s = buy({ ...freshSave(), coins: 200 }, 'headphones');
+  expect(s.coins).toBe(60);
+  expect(multiplier(s)).toBeCloseTo(1.35);
+  const done = completeOnboarding(s);
+  expect(done.onboarded).toBe(true);
+  expect(completeOnboarding(done)).toBe(done);
+  expect(parseSave(JSON.stringify(done)).onboarded).toBe(true);
+  expect(() => parseSave(JSON.stringify({ ...done, onboarded: 'yes' }))).toThrow();
  });
 });

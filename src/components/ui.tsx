@@ -29,9 +29,17 @@ import { default as Coffee } from 'lucide-react-native/icons/coffee';
 import { default as LampDesk } from 'lucide-react-native/icons/lamp-desk';
 import { default as Award } from 'lucide-react-native/icons/award';
 import { default as Check } from 'lucide-react-native/icons/check';
+import { default as Settings } from 'lucide-react-native/icons/settings';
+import { default as House } from 'lucide-react-native/icons/house';
+import { default as ListTodo } from 'lucide-react-native/icons/list-todo';
+import { default as RefreshCw } from 'lucide-react-native/icons/refresh-cw';
+import { default as Download } from 'lucide-react-native/icons/download';
+import { default as Headphones } from 'lucide-react-native/icons/headphones';
+import { default as BookOpen } from 'lucide-react-native/icons/book-open';
+import { default as ShieldCheck } from 'lucide-react-native/icons/shield-check';
 import type { LucideIcon } from 'lucide-react-native';
 export const C = { ink: '#354F47', muted: '#788A7E', bg: '#F8FAF2', green: '#426E5C', mint: '#E5EEDC', peach: '#F4D0B4', gold: '#A47A2A' };
-const icons = { coffee: Coffee, cat: Cat, lamp: LampDesk, award: Award, check: Check, arrow: ArrowRight, rug: Armchair, badge: Badge, bug: Bug, coin: CircleDollarSign, clock: Clock3, code: Code2, plant: Leaf, game: Gamepad2, heart: Heart, keyboard: Keyboard, monitor: Monitor, poster: MoonStar, package: Package, palette: Palette, shop: ShoppingBag, brain: Brain, alert: CircleAlert, sun: Sun, terminal: Terminal, trophy: Trophy, close: X, flower: Flower2, rain: CloudRain } satisfies Record<string, LucideIcon>;
+const icons = { coffee: Coffee, cat: Cat, lamp: LampDesk, award: Award, check: Check, settings: Settings, house: House, tasks: ListTodo, refresh: RefreshCw, download: Download, headphones: Headphones, book: BookOpen, shield: ShieldCheck, arrow: ArrowRight, rug: Armchair, badge: Badge, bug: Bug, coin: CircleDollarSign, clock: Clock3, code: Code2, plant: Leaf, game: Gamepad2, heart: Heart, keyboard: Keyboard, monitor: Monitor, poster: MoonStar, package: Package, palette: Palette, shop: ShoppingBag, brain: Brain, alert: CircleAlert, sun: Sun, terminal: Terminal, trophy: Trophy, close: X, flower: Flower2, rain: CloudRain } satisfies Record<string, LucideIcon>;
 export type IconName = keyof typeof icons;
 export function Icon({ name, size = 22, color = C.ink }: { name: IconName; size?: number; color?: string }) { const Component = icons[name]; return <Component size={size} color={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" accessible={process.env.EXPO_OS === 'web' ? undefined : false} />; }
 export function Label({ style, ...props }: TextProps) { return <Text {...props} style={[styles.text, style]} />; }

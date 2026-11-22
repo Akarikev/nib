@@ -52,6 +52,11 @@ export function Room({ working, celebrating = false, catOwned = false, owned, de
    <Rect x="137" y="187" width="20" height="20" rx="5" fill="#FFF4D9" stroke={stroke} strokeWidth="3" />
    <Path d="M157 190 Q167 191 158 201" fill="none" stroke={stroke} strokeWidth="3" />
    <Path d="M144 178 Q139 173 146 167" fill="none" stroke="#8C9D8B" strokeWidth="2" strokeLinecap="round" />
+   {owned.includes('headphones') && <G>
+    <Path d="M291 196 A10 10 0 0 1 309 196" fill="none" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+    <Rect x="287" y="194" width="6" height="11" rx="3" fill="#E69F82" stroke={stroke} strokeWidth="2" />
+    <Rect x="307" y="194" width="6" height="11" rx="3" fill="#E69F82" stroke={stroke} strokeWidth="2" />
+   </G>}
    {decorated.includes('plant') && <G><Path d="M48 143 H74 L70 161 H52Z" fill="#EAA787" stroke={stroke} strokeWidth="2" /><Path d="M61 144 V117" stroke={stroke} strokeWidth="3" /><Ellipse cx="51" cy="125" rx="9" ry="5" fill="#749E70" transform="rotate(30 51 125)" /><Ellipse cx="70" cy="115" rx="10" ry="5" fill="#749E70" transform="rotate(-35 70 115)" /></G>}
    {celebrating && <Rect x="166" y="231" width="47" height="34" rx="13" fill="#A4BFAE" stroke={stroke} strokeWidth="4" />}
    <Rect x="162" y="265" width="62" height="10" rx="5" fill="#8AABA0" stroke={stroke} strokeWidth="4" />
