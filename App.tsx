@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -47,6 +47,8 @@ type Tab = 'studio' | 'actions';
 
 function Game() {
  const insets = useSafeAreaInsets();
+ const { width, height } = useWindowDimensions();
+ const isWide = width >= 760 || (width > height && width >= 600);
  const [save, setSave] = useState<Save | null>(null);
  const saveRef = useRef<Save | null>(null);
  const busyRef = useRef(false);
@@ -293,18 +295,31 @@ function Game() {
 
    {/* Main Tab View */}
    {tab === 'studio' ? (
-    /* Tab 1: Full-Screen Studio View focused on the Avatar & Room */
-    <View style={s.studioTabContainer}>
-     <View style={{ width: '100%', maxWidth: 520, gap: 14 }}>
-      <Room
-       working={!!active && !ready}
-       celebrating={ready || now < celebrateUntil}
-       catOwned={!!save.catOwned}
-       owned={save.owned}
-       decorated={save.decorated}
-       atmosphere={save.atmosphere ?? 'sunny'}
-      />
-      <View style={s.studioFooterCard}>
+    /* Tab 1: Full-Screen Studio View focused on the Avatar & Room (adaptive for portrait, landscape, tablet & desktop) */
+    <ScrollView
+     contentInsetAdjustmentBehavior="never"
+     contentContainerStyle={[
+      s.studioTabContainer,
+      { minHeight: Math.max(0, height - insets.top - insets.bottom - 140) },
+     ]}
+    >
+     <View
+      style={[
+       { width: '100%', maxWidth: isWide ? 880 : 520, gap: 16, alignItems: 'center' },
+       isWide && { flexDirection: 'row', alignItems: 'center' },
+      ]}
+     >
+      <View style={{ width: '100%', flex: isWide ? 1.25 : undefined, maxWidth: isWide ? 500 : 520 }}>
+       <Room
+        working={!!active && !ready}
+        celebrating={ready || now < celebrateUntil}
+        catOwned={!!save.catOwned}
+        owned={save.owned}
+        decorated={save.decorated}
+        atmosphere={save.atmosphere ?? 'sunny'}
+       />
+      </View>
+      <View style={[s.studioFooterCard, { width: '100%', flex: isWide ? 1 : undefined }]}>
        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <View style={{ flexDirection: 'row', gap: 7, alignItems: 'center', flexShrink: 1 }}>
          <View
@@ -359,7 +374,7 @@ function Game() {
        ) : null}
       </View>
      </View>
-    </View>
+    </ScrollView>
    ) : (
     /* Tab 2: Projects & Actions View */
     <ScrollView
@@ -734,11 +749,11 @@ const s = StyleSheet.create({
   borderRadius: 11,
  },
  studioTabContainer: {
-  flex: 1,
+  flexGrow: 1,
   justifyContent: 'center',
   alignItems: 'center',
   paddingHorizontal: 20,
-  paddingVertical: 12,
+  paddingVertical: 14,
  },
  studioFooterCard: {
   backgroundColor: '#FFFFFF',

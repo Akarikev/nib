@@ -1,7 +1,7 @@
 const { APP_NAME } = require('./src/config.json');
 export default {
  expo: {
-  name: APP_NAME, slug: 'nib', owner: 'elormtsx', version: '1.0.0', orientation: 'portrait',
+  name: APP_NAME, slug: 'nib', owner: 'elormtsx', version: '1.0.0', orientation: 'default',
   icon: './assets/icon.png', userInterfaceStyle: 'light',
   ios: { supportsTablet: true, bundleIdentifier: 'com.nib.game' },
   android: { package: 'com.nib.game', permissions: [], blockedPermissions: ['android.permission.RECORD_AUDIO', 'android.permission.CAMERA'], adaptiveIcon: { foregroundImage: './assets/icon.png', backgroundColor: '#E2EDE2' } },
