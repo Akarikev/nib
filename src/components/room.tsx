@@ -1,12 +1,29 @@
-import React, { useEffect } from 'react';
-import { View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { LayoutChangeEvent, View } from 'react-native';
 import Animated, { cancelAnimation, Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { Atmosphere } from '../game/game';
 import { Developer, DeskCat } from './developer';
 import Svg, { Circle, Ellipse, G, Path, Rect, Line } from 'react-native-svg';
 
-export function Room({ working, celebrating = false, catOwned = false, owned, decorated, atmosphere = 'sunny' }: { working: boolean; celebrating?: boolean; catOwned?: boolean; owned: string[]; decorated: string[]; atmosphere?: Atmosphere }) {
+export function Room({
+ working,
+ celebrating = false,
+ catOwned = false,
+ owned,
+ decorated,
+ atmosphere = 'sunny',
+ fullScreen = false,
+}: {
+ working: boolean;
+ celebrating?: boolean;
+ catOwned?: boolean;
+ owned: string[];
+ decorated: string[];
+ atmosphere?: Atmosphere;
+ fullScreen?: boolean;
+}) {
  const reduced = useReducedMotion(); const ambient = useSharedValue(0);
+ const [box, setBox] = useState({ width: 0, height: 0 });
  useEffect(() => {
   if (reduced) { ambient.set(0); return; }
   ambient.set(withRepeat(withSequence(withTiming(1, { duration: atmosphere === 'rainy' ? 850 : 4000, easing: Easing.linear }), withTiming(0, { duration: atmosphere === 'rainy' ? 0 : 4000, easing: Easing.linear })), -1));
@@ -15,9 +32,44 @@ export function Room({ working, celebrating = false, catOwned = false, owned, de
  const ambientStyle = useAnimatedStyle(() => ({ opacity: atmosphere === 'moonlit' ? .5 + ambient.get() * .5 : .8, transform: [{ translateY: atmosphere === 'rainy' ? ambient.get() * 9 : -ambient.get() * 4 }] }));
  const night = atmosphere === 'moonlit'; const rain = atmosphere === 'rainy';
  const wall = night ? '#C8D1DB' : rain ? '#D7E4E2' : '#E2EDE2';
+ const floor = night ? '#B6A89F' : '#D5BC9E';
  const stroke = '#4D5C55';
- return <View accessibilityLabel={`Your developer ${working ? 'is typing at the computer' : celebrating ? 'is celebrating a finished project' : 'is taking a quiet break'}${catOwned ? ', with your adopted desk cat napping beside the coffee' : ''} in the ${atmosphere} studio`} style={{ aspectRatio: 1.13, width: '100%', overflow: 'hidden', borderRadius: 32, backgroundColor: wall }}>
-  <Svg viewBox="0 0 400 354" width="100%" height="100%">
+
+ function onLayout(e: LayoutChangeEvent) {
+  const { width, height } = e.nativeEvent.layout;
+  if (width !== box.width || height !== box.height) setBox({ width, height });
+ }
+
+ // Compute exact 400:354 stage size that fills the available space while keeping all layered SVGs 1:1 aligned
+ const ratio = 400 / 354;
+ let stageWidth: number | '100%' = '100%';
+ let stageHeight: number | '100%' = '100%';
+ if (fullScreen && box.width > 0 && box.height > 0) {
+  // Fit the biggest 400x354 canvas inside the full screen area (with slight cover zoom on tall portrait screens so the desk & developer are large)
+  const fitWidth = box.width;
+  const fitHeight = fitWidth / ratio;
+  if (fitHeight <= box.height) {
+   // Portrait / tall screen: scale up moderately (up to 1.32x width) so the studio fills more vertical space without clipping the character or desk
+   const maxSafeWidth = box.width * 1.32;
+   const targetHeight = Math.min(box.height * 0.88, maxSafeWidth / ratio);
+   stageHeight = Math.max(fitHeight, targetHeight);
+   stageWidth = stageHeight * ratio;
+  } else {
+   // Wide / landscape screen: fit full height and expand width proportionally
+   stageHeight = box.height;
+   stageWidth = stageHeight * ratio;
+  }
+ }
+
+ const canvas = (
+  <View
+   style={
+    fullScreen
+     ? { width: stageWidth, height: stageHeight, position: 'relative' }
+     : { aspectRatio: 1.13, width: '100%', overflow: 'hidden', borderRadius: 32, backgroundColor: wall }
+   }
+  >
+   <Svg viewBox="0 0 400 354" width="100%" height="100%">
    <Rect width="400" height="354" fill={wall} />
    <Path d="M0 259 Q200 242 400 259 V354 H0Z" fill={night ? '#B6A89F' : '#D5BC9E'} />
    <Path d="M0 259 Q200 242 400 259" stroke="#B5997F" strokeWidth="3" fill="none" />
@@ -70,7 +122,55 @@ export function Room({ working, celebrating = false, catOwned = false, owned, de
     {rain ? Array.from({ length: 15 }, (_, i) => <Path key={i} d={`M${8 + (i % 5) * 21} ${-8 + Math.floor(i / 5) * 39} l-4 12`} stroke="#E9F3F6" strokeWidth="1.5" strokeLinecap="round" />) : night ? <G>{[[16, 31], [41, 13], [76, 43], [29, 57], [87, 22]].map(([x, y], i) => <Path key={i} d={`M${x - 2} ${y} h4 M${x} ${y - 2} v4`} stroke="#FFF5D8" strokeWidth="1.3" strokeLinecap="round" />)}</G> : <G><Circle cx="24" cy="39" r="2" fill="#FFF8DE" /><Circle cx="72" cy="71" r="1.5" fill="#FFF8DE" /><Circle cx="42" cy="88" r="1.5" fill="#FFF8DE" /></G>}
    </Svg></Animated.View>
   </View>
-  {catOwned && <DeskCat working={working} />}
-  <Developer working={working} celebrating={celebrating} />
- </View>;
+   {catOwned && <DeskCat working={working} />}
+   <Developer working={working} celebrating={celebrating} />
+  </View>
+ );
+
+ if (!fullScreen) {
+  return (
+   <View
+    accessibilityLabel={`Your developer ${
+     working ? 'is typing at the computer' : celebrating ? 'is celebrating a finished project' : 'is taking a quiet break'
+    }${catOwned ? ', with your adopted desk cat napping beside the coffee' : ''} in the ${atmosphere} studio`}
+    style={{ width: '100%' }}
+   >
+    {canvas}
+   </View>
+  );
+ }
+
+ return (
+  <View
+   onLayout={onLayout}
+   accessibilityLabel={`Your developer ${
+    working ? 'is typing at the computer' : celebrating ? 'is celebrating a finished project' : 'is taking a quiet break'
+   }${catOwned ? ', with your adopted desk cat napping beside the coffee' : ''} in the ${atmosphere} studio`}
+   style={{
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+    backgroundColor: wall,
+    alignItems: 'center',
+    justifyContent: 'center',
+   }}
+  >
+   {/* Seamless wall & floor backdrop so the room fills 100% of any screen aspect ratio edge-to-edge */}
+   <View
+    pointerEvents="none"
+    style={{
+     position: 'absolute',
+     left: 0,
+     right: 0,
+     bottom: 0,
+     height: '34%',
+     backgroundColor: floor,
+     borderTopWidth: 3,
+     borderTopColor: '#B5997F',
+    }}
+   />
+   {canvas}
+  </View>
+ );
 }

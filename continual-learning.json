@@ -70,7 +70,7 @@
     "Installed Expo Skills, linked @elormtsx/nib on EAS, verified simulator:availability (false on Free plan), configured eas.json/.easignore, and completed Android production AAB build 3aca056e-f4ea-43fb-a4cf-4efdfc33b1b2 (FINISHED)",
     "Created scripts/make-store-assets.ts and generated Google Play Store assets in store-assets/ (512x512 icon, 1024x500 feature graphic, four 1080x1920 9:16 phone screenshots, and store listing copy)",
     "Added Privacy Policy view (src/components/privacy.tsx and public/privacy.html), deployed live to EAS Hosting at https://elormtsx-nib.expo.app/privacy, and pushed GitHub repositories Akarikev/nib and Akarikev/nib-site",
-    "Added sticky header with milestone badge & settings icon, bottom tab navigation (Studio full-screen avatar view vs Projects actions view), 3-step animated onboarding flow, Settings modal, OTA + store update checker (expo-updates + version.json), Cozy headphones (+35% earnings), Full studio milestone, and orientation: 'default' with responsive tablet/landscape Studio layout"
+    "Added sticky header with milestone badge, icon-only bottom tab navigation (Studio full-screen edge-to-edge room view, Projects actions view, and Settings view), 3-step animated onboarding flow, OTA + store update checker (expo-updates + version.json), Cozy headphones (+35% earnings), Full studio milestone, and orientation: 'default'"
   ],
   "inProgress": [
     "All 8 user-requested UI/feature updates implemented, verified (16 tests, 67 assertions), deployed to EAS Hosting, and pushed to Akarikev/nib and Akarikev/nib-site."

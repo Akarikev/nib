@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,7 +14,7 @@ import { Notice, Toast } from './src/components/toast';
 import { Shop } from './src/components/shop';
 import { PrivacyPolicy } from './src/components/privacy';
 import { Onboarding } from './src/components/onboarding';
-import { SettingsModal } from './src/components/settings';
+import { SettingsContent } from './src/components/settings';
 import { useAppUpdates } from './src/utils/updates';
 import { APP_NAME } from './src/config';
 import {
@@ -43,12 +43,10 @@ import {
 
 const KEY = 'pocket-dev.save.v1'; // Keep the original key so existing rooms survive updates.
 const projectIcons: Record<string, IconName> = { hello: 'terminal', bug: 'bug', site: 'code', game: 'game' };
-type Tab = 'studio' | 'actions';
+type Tab = 'studio' | 'actions' | 'settings';
 
 function Game() {
  const insets = useSafeAreaInsets();
- const { width, height } = useWindowDimensions();
- const isWide = width >= 760 || (width > height && width >= 600);
  const [save, setSave] = useState<Save | null>(null);
  const saveRef = useRef<Save | null>(null);
  const busyRef = useRef(false);
@@ -57,7 +55,6 @@ function Game() {
  const [now, setNow] = useState(Date.now());
  const [tab, setTab] = useState<Tab>('studio');
  const [shop, setShop] = useState(false);
- const [settings, setSettings] = useState(false);
  const [onboarding, setOnboarding] = useState(false);
  const [showPrivacy, setShowPrivacy] = useState(() => {
   if (typeof window !== 'undefined' && window.location) {
@@ -75,7 +72,6 @@ function Game() {
 
  const dismiss = useCallback(() => setNotice(null), []);
  const closeShop = useCallback(() => setShop(false), []);
- const closeSettings = useCallback(() => setSettings(false), []);
 
  const notify = useCallback((text: string, error = false, icon: 'brain' | 'coin' = 'brain') => {
   setNotice({ id: ++noticeId.current, text, error, icon });
@@ -249,17 +245,6 @@ function Game() {
         </View>
        )}
       </Pressable>
-
-      {/* Header Settings Button */}
-      <Pressable
-       accessibilityRole="button"
-       accessibilityLabel="Open studio settings"
-       onPress={() => setSettings(true)}
-       style={({ pressed }) => [s.headerIconBtn, { opacity: pressed ? 0.75 : 1 }]}
-      >
-       <Icon name="settings" size={19} color={C.ink} />
-       {updates.kind !== 'none' && <View style={s.updateDot} />}
-      </Pressable>
      </View>
     </View>
 
@@ -295,87 +280,19 @@ function Game() {
 
    {/* Main Tab View */}
    {tab === 'studio' ? (
-    /* Tab 1: Full-Screen Studio View focused on the Avatar & Room (adaptive for portrait, landscape, tablet & desktop) */
-    <ScrollView
-     contentInsetAdjustmentBehavior="never"
-     contentContainerStyle={[
-      s.studioTabContainer,
-      { minHeight: Math.max(0, height - insets.top - insets.bottom - 140) },
-     ]}
-    >
-     <View
-      style={[
-       { width: '100%', maxWidth: isWide ? 880 : 520, gap: 16, alignItems: 'center' },
-       isWide && { flexDirection: 'row', alignItems: 'center' },
-      ]}
-     >
-      <View style={{ width: '100%', flex: isWide ? 1.25 : undefined, maxWidth: isWide ? 500 : 520 }}>
-       <Room
-        working={!!active && !ready}
-        celebrating={ready || now < celebrateUntil}
-        catOwned={!!save.catOwned}
-        owned={save.owned}
-        decorated={save.decorated}
-        atmosphere={save.atmosphere ?? 'sunny'}
-       />
-      </View>
-      <View style={[s.studioFooterCard, { width: '100%', flex: isWide ? 1 : undefined }]}>
-       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <View style={{ flexDirection: 'row', gap: 7, alignItems: 'center', flexShrink: 1 }}>
-         <View
-          style={{
-           width: 7,
-           height: 7,
-           borderRadius: 4,
-           backgroundColor: ready ? C.gold : active ? '#5C946E' : '#789B78',
-          }}
-         />
-         <Label style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 14, flexShrink: 1 }}>
-          {ready
-           ? `${current?.name ?? 'Project'} is ready to ship!`
-           : active
-           ? `Coding: ${current?.name} · ${time}`
-           : 'Resting in the studio'}
-         </Label>
-        </View>
-        <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
-         <Icon name="trophy" size={13} color={C.muted} />
-         <Label style={{ fontSize: 12, color: C.muted }}>{save.completed} shipped</Label>
-        </View>
-       </View>
-       {active && (
-        <View
-         accessibilityRole="progressbar"
-         accessibilityValue={{ min: 0, max: 100, now: Math.round(p * 100) }}
-         style={s.track}
-        >
-         <View style={{ width: `${p * 100}%`, height: '100%', backgroundColor: '#83A68B', borderRadius: 20 }} />
-        </View>
-       )}
-       {ready ? (
-        <Button
-         icon="coin"
-         disabled={busy}
-         onPress={() => act(s => claim(s, Date.now()), `Shipped! ${active!.reward} coins in your jar.`, 'coin')}
-        >
-         Collect {active!.reward} coins
-        </Button>
-       ) : !active ? (
-        <Pressable
-         accessibilityRole="button"
-         onPress={() => setTab('actions')}
-         style={({ pressed }) => [s.quickSwitchBtn, { opacity: pressed ? 0.75 : 1 }]}
-        >
-         <Label style={{ fontSize: 13, fontFamily: 'Nunito_800ExtraBold', color: C.green }}>
-          Pick a project in Projects
-         </Label>
-         <Icon name="arrow" size={15} color={C.green} />
-        </Pressable>
-       ) : null}
-      </View>
-     </View>
-    </ScrollView>
-   ) : (
+    /* Tab 1: Full-Screen Studio View — the animated studio fills the entire screen edge-to-edge */
+    <View style={{ flex: 1, width: '100%' }}>
+     <Room
+      fullScreen
+      working={!!active && !ready}
+      celebrating={ready || now < celebrateUntil}
+      catOwned={!!save.catOwned}
+      owned={save.owned}
+      decorated={save.decorated}
+      atmosphere={save.atmosphere ?? 'sunny'}
+     />
+    </View>
+   ) : tab === 'actions' ? (
     /* Tab 2: Projects & Actions View */
     <ScrollView
      contentInsetAdjustmentBehavior="never"
@@ -537,51 +454,63 @@ function Game() {
       </View>
      </View>
     </ScrollView>
+   ) : (
+    /* Tab 3: Studio Settings View */
+    <SettingsContent
+     save={save}
+     busy={busy}
+     onAtmosphere={onAtmosphere}
+     onReplayOnboarding={() => setOnboarding(true)}
+     onOpenPrivacy={() => {
+      if (typeof window !== 'undefined' && window.history) window.history.pushState({}, '', '/privacy');
+      setShowPrivacy(true);
+     }}
+     updates={updates}
+    />
    )}
 
-   {/* Bottom Tab Navigation Bar: Studio (full-screen avatar view) vs Projects (actions) */}
+   {/* Bottom Tab Navigation Bar: Icon-Only (Studio, Projects, Settings) */}
    <View style={[s.bottomBarWrap, { paddingBottom: Math.max(insets.bottom, 12) }]}>
     <View style={s.bottomBar}>
      <Pressable
       accessibilityRole="tab"
+      accessibilityLabel="Studio"
       accessibilityState={{ selected: tab === 'studio' }}
       onPress={() => setTab('studio')}
       style={({ pressed }) => [s.tabBtn, tab === 'studio' && s.tabBtnActive, { opacity: pressed ? 0.8 : 1 }]}
      >
-      <Icon name="house" size={19} color={tab === 'studio' ? C.green : C.muted} />
-      <Label
-       style={{
-        fontFamily: 'Nunito_800ExtraBold',
-        fontSize: 13,
-        color: tab === 'studio' ? C.green : C.muted,
-       }}
-      >
-       Studio
-      </Label>
+      <Icon name="house" size={22} color={tab === 'studio' ? C.green : C.muted} />
      </Pressable>
 
      <Pressable
       accessibilityRole="tab"
+      accessibilityLabel="Projects"
       accessibilityState={{ selected: tab === 'actions' }}
       onPress={() => setTab('actions')}
       style={({ pressed }) => [s.tabBtn, tab === 'actions' && s.tabBtnActive, { opacity: pressed ? 0.8 : 1 }]}
      >
-      <Icon name="tasks" size={19} color={tab === 'actions' ? C.green : C.muted} />
-      <Label
-       style={{
-        fontFamily: 'Nunito_800ExtraBold',
-        fontSize: 13,
-        color: tab === 'actions' ? C.green : C.muted,
-       }}
-      >
-       Projects
-      </Label>
-      {ready && <View style={s.tabReadyDot} />}
+      <View style={{ position: 'relative' }}>
+       <Icon name="tasks" size={22} color={tab === 'actions' ? C.green : C.muted} />
+       {ready && <View style={s.tabReadyDot} />}
+      </View>
+     </Pressable>
+
+     <Pressable
+      accessibilityRole="tab"
+      accessibilityLabel="Settings"
+      accessibilityState={{ selected: tab === 'settings' }}
+      onPress={() => setTab('settings')}
+      style={({ pressed }) => [s.tabBtn, tab === 'settings' && s.tabBtnActive, { opacity: pressed ? 0.8 : 1 }]}
+     >
+      <View style={{ position: 'relative' }}>
+       <Icon name="settings" size={22} color={tab === 'settings' ? C.green : C.muted} />
+       {updates.kind !== 'none' && <View style={s.tabReadyDot} />}
+      </View>
      </Pressable>
     </View>
    </View>
 
-   {!shop && !settings && !onboarding && <Toast notice={notice} onDismiss={dismiss} />}
+   {!shop && !onboarding && <Toast notice={notice} onDismiss={dismiss} />}
 
    <Shop
     open={shop}
@@ -594,20 +523,6 @@ function Game() {
     onMilestone={onMilestone}
     notice={notice}
     onDismiss={dismiss}
-   />
-
-   <SettingsModal
-    open={settings}
-    onClose={closeSettings}
-    save={save}
-    busy={busy}
-    onAtmosphere={onAtmosphere}
-    onReplayOnboarding={() => setOnboarding(true)}
-    onOpenPrivacy={() => {
-     if (typeof window !== 'undefined' && window.history) window.history.pushState({}, '', '/privacy');
-     setShowPrivacy(true);
-    }}
-    updates={updates}
    />
 
    <Onboarding
@@ -859,10 +774,8 @@ const s = StyleSheet.create({
  },
  tabBtn: {
   flex: 1,
-  flexDirection: 'row',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: 8,
   paddingVertical: 11,
   borderRadius: 17,
  },
@@ -870,9 +783,14 @@ const s = StyleSheet.create({
   backgroundColor: '#FFFFFF',
  },
  tabReadyDot: {
-  width: 8,
-  height: 8,
-  borderRadius: 4,
+  position: 'absolute',
+  top: -3,
+  right: -5,
+  width: 9,
+  height: 9,
+  borderRadius: 5,
   backgroundColor: C.gold,
+  borderWidth: 1.5,
+  borderColor: '#FFFFFF',
  },
 });
