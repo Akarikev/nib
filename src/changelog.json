@@ -1,0 +1,32 @@
+{
+  "releases": [
+    {
+      "id": "1.1.0",
+      "version": "1.1.0",
+      "title": "Your Studio, Your Style",
+      "subtitle": "Remember the quiet joy of coding by hand — now with more projects, mascots, and a live studio.",
+      "highlights": [
+        {
+          "icon": "user",
+          "title": "4 Male & Female Developer Mascots",
+          "detail": "Pick Leo, Maya, Kai, or Zoe and personalize your studio terminal with an optional nickname."
+        },
+        {
+          "icon": "terminal",
+          "title": "Interactive Console & Live Monitor",
+          "detail": "Open the collapsible terminal for project-specific logs & quick commands, or tap your monitor to switch screens."
+        },
+        {
+          "icon": "cpu",
+          "title": "4 New Coding Projects",
+          "detail": "Build a Lo-fi beat script, Cozy chatbot, Pocket app, and a Tiny OS from scratch."
+        },
+        {
+          "icon": "flame",
+          "title": "Ranks, Streaks, Cat Petting & New Decor",
+          "detail": "Climb developer ranks, keep a daily streak, tap your desk cat for purrs, and unlock the Espresso maker & Fairy lights."
+        }
+      ]
+    }
+  ]
+}

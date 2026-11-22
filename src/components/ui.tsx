@@ -37,15 +37,26 @@ import { default as Download } from 'lucide-react-native/icons/download';
 import { default as Headphones } from 'lucide-react-native/icons/headphones';
 import { default as BookOpen } from 'lucide-react-native/icons/book-open';
 import { default as ShieldCheck } from 'lucide-react-native/icons/shield-check';
+import { default as Music } from 'lucide-react-native/icons/music';
+import { default as Bot } from 'lucide-react-native/icons/bot';
+import { default as Smartphone } from 'lucide-react-native/icons/smartphone';
+import { default as Cpu } from 'lucide-react-native/icons/cpu';
+import { default as Flame } from 'lucide-react-native/icons/flame';
+import { default as Lightbulb } from 'lucide-react-native/icons/lightbulb';
+import { default as CupSoda } from 'lucide-react-native/icons/cup-soda';
+import { default as ArrowLeft } from 'lucide-react-native/icons/arrow-left';
+import { default as ChevronRight } from 'lucide-react-native/icons/chevron-right';
+import { default as User } from 'lucide-react-native/icons/user';
 import type { LucideIcon } from 'lucide-react-native';
 export const C = { ink: '#354F47', muted: '#788A7E', bg: '#F8FAF2', green: '#426E5C', mint: '#E5EEDC', peach: '#F4D0B4', gold: '#A47A2A' };
-const icons = { coffee: Coffee, cat: Cat, lamp: LampDesk, award: Award, check: Check, settings: Settings, house: House, tasks: ListTodo, refresh: RefreshCw, download: Download, headphones: Headphones, book: BookOpen, shield: ShieldCheck, arrow: ArrowRight, rug: Armchair, badge: Badge, bug: Bug, coin: CircleDollarSign, clock: Clock3, code: Code2, plant: Leaf, game: Gamepad2, heart: Heart, keyboard: Keyboard, monitor: Monitor, poster: MoonStar, package: Package, palette: Palette, shop: ShoppingBag, brain: Brain, alert: CircleAlert, sun: Sun, terminal: Terminal, trophy: Trophy, close: X, flower: Flower2, rain: CloudRain } satisfies Record<string, LucideIcon>;
+const icons = { coffee: Coffee, cat: Cat, lamp: LampDesk, award: Award, check: Check, settings: Settings, house: House, tasks: ListTodo, refresh: RefreshCw, download: Download, headphones: Headphones, book: BookOpen, shield: ShieldCheck, music: Music, bot: Bot, smartphone: Smartphone, cpu: Cpu, flame: Flame, lights: Lightbulb, espresso: CupSoda, back: ArrowLeft, chevron: ChevronRight, user: User, arrow: ArrowRight, rug: Armchair, badge: Badge, bug: Bug, coin: CircleDollarSign, clock: Clock3, code: Code2, plant: Leaf, game: Gamepad2, heart: Heart, keyboard: Keyboard, monitor: Monitor, poster: MoonStar, package: Package, palette: Palette, shop: ShoppingBag, brain: Brain, alert: CircleAlert, sun: Sun, terminal: Terminal, trophy: Trophy, close: X, flower: Flower2, rain: CloudRain } satisfies Record<string, LucideIcon>;
 export type IconName = keyof typeof icons;
 export function Icon({ name, size = 22, color = C.ink }: { name: IconName; size?: number; color?: string }) { const Component = icons[name]; return <Component size={size} color={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" accessible={process.env.EXPO_OS === 'web' ? undefined : false} />; }
 export function Label({ style, ...props }: TextProps) { return <Text {...props} style={[styles.text, style]} />; }
-export function Button({ children, onPress, disabled = false, secondary = false, icon }: { children: React.ReactNode; onPress: () => void; disabled?: boolean; secondary?: boolean; icon?: IconName }) {
+export function Button({ children, onPress, disabled = false, secondary = false, danger = false, icon }: { children: React.ReactNode; onPress: () => void; disabled?: boolean; secondary?: boolean; danger?: boolean; icon?: IconName }) {
  const color = secondary ? C.green : '#FFFDF4';
- return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.button, secondary && { backgroundColor: C.mint }, disabled && { opacity: .48 }, pressed && { opacity: .75 }]}><Label style={{ fontFamily: 'Nunito_800ExtraBold', color, textAlign: 'center', flexShrink: 1 }}>{children}</Label>{icon && <Icon name={icon} color={color} size={18} />}</Pressable>;
+ const bg = danger ? '#B65147' : secondary ? C.mint : C.green;
+ return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.button, { backgroundColor: bg }, disabled && { opacity: .48 }, pressed && { opacity: .75 }]}><Label style={{ fontFamily: 'Nunito_800ExtraBold', color, textAlign: 'center', flexShrink: 1 }}>{children}</Label>{icon && <Icon name={icon} color={color} size={18} />}</Pressable>;
 }
 export function Coins({ amount, small = false }: { amount: number; small?: boolean }) { return <View accessibilityLabel={`${amount} coins`} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}><Icon name="coin" color={C.gold} size={small ? 15 : 22} /><Label style={{ fontFamily: small ? 'Nunito_800ExtraBold' : 'Fredoka_600SemiBold', color: small ? C.gold : C.ink, fontSize: small ? 13 : 21, fontVariant: ['tabular-nums'] }}>{amount.toLocaleString()}</Label></View>; }
 export function OwnedBadge({ kind }: { kind: 'equipped' | 'placed' | 'owned' }) { return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: kind === 'owned' ? '#EEEDE6' : '#E6EEDC', borderRadius: 12, paddingHorizontal: 9, paddingVertical: 5 }}><Icon name={kind === 'equipped' ? 'keyboard' : kind === 'placed' ? 'flower' : 'package'} size={12} color={C.green} /><Label style={{ fontSize: 10, color: C.green, fontFamily: 'Nunito_800ExtraBold' }}>{kind === 'equipped' ? 'Equipped' : kind === 'placed' ? 'In your room' : 'Yours'}</Label></View>; }

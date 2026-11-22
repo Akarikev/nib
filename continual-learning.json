@@ -73,7 +73,7 @@
     "Added sticky header with milestone badge, icon-only bottom tab navigation (Studio full-screen edge-to-edge room view, Projects actions view, and Settings view), 3-step animated onboarding flow, OTA + store update checker (expo-updates + version.json), Cozy headphones (+35% earnings), Full studio milestone, and orientation: 'default'"
   ],
   "inProgress": [
-    "All 8 user-requested UI/feature updates implemented, verified (16 tests, 67 assertions), deployed to EAS Hosting, and pushed to Akarikev/nib and Akarikev/nib-site."
+    "v1.1.0 complete (18 tests, 93 assertions): full-screen onboarding with optional nickname & 4 male/female mascots, interactive multi-line terminal, live animated monitor screens, 8 projects, ranks, streaks, fairy lights, espresso maker, tappable desk cat, sectioned Settings, custom Nib alert, OTA bottom sheet, full-screen store update screen, data-driven src/changelog.json What's New modal, and refreshed Play Store graphics/copy. Committing, pushing, and launching EAS Android production AAB build."
   ],
   "verification": {
     "bun test src/game/game.test.ts": "PASS: 16 tests, 67 assertions including adoption, energy offline refill, cap, rollback, boost, warm desk lamp, cozy headphones, studio milestones, and onboarding persistence",

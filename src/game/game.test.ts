@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { adoptCat, boostProject, claimMilestone, completeOnboarding, energyStatus, ENERGY_REFILL_MS, multiplier, refillEnergy, buy, claim, freshSave, parseSave, progress, setAtmosphere, startProject, toggleDecoration } from './game';
+import { adoptCat, boostProject, claimMilestone, completeOnboarding, CURRENT_ONBOARDING_VERSION, developerRank, energyStatus, ENERGY_REFILL_MS, multiplier, refillEnergy, buy, claim, freshSave, parseSave, progress, PROJECTS, setAtmosphere, setDeveloperStyle, setPlayerName, startProject, toggleDecoration } from './game';
 describe('offline project loop', () => {
  test('progress survives serialization and rewards exactly once', () => {
   const active = startProject(freshSave(), 'hello', 1000);
@@ -110,8 +110,52 @@ describe('warm desk lamp and studio milestones', () => {
   expect(multiplier(s)).toBeCloseTo(1.35);
   const done = completeOnboarding(s);
   expect(done.onboarded).toBe(true);
+  expect(done.onboardingVersion).toBe(CURRENT_ONBOARDING_VERSION);
   expect(completeOnboarding(done)).toBe(done);
   expect(parseSave(JSON.stringify(done)).onboarded).toBe(true);
   expect(() => parseSave(JSON.stringify({ ...done, onboarded: 'yes' }))).toThrow();
+ });
+ test('nickname, mascot variants, and returning-user onboarding version persist safely', () => {
+  const legacyRaw = JSON.stringify({ version: 1, coins: 50, completed: 2, owned: [], decorated: [], active: null });
+  const legacy = parseSave(legacyRaw);
+  expect(legacy.playerName).toBeUndefined();
+  expect(legacy.onboardingVersion).toBeUndefined();
+  const personalized = completeOnboarding(legacy, { name: '  Elorm  ', style: 'bob' });
+  expect(personalized.playerName).toBe('Elorm');
+  expect(personalized.developerStyle).toBe('bob');
+  expect(personalized.onboardingVersion).toBe(CURRENT_ONBOARDING_VERSION);
+  const reloaded = parseSave(JSON.stringify(personalized));
+  expect(reloaded.playerName).toBe('Elorm');
+  expect(reloaded.developerStyle).toBe('bob');
+  expect(setPlayerName(reloaded, '   ').playerName).toBeUndefined();
+  expect(setDeveloperStyle(reloaded, 'cap').developerStyle).toBe('cap');
+  expect(() => parseSave(JSON.stringify({ ...reloaded, developerStyle: 'alien' }))).toThrow();
+  expect(() => parseSave(JSON.stringify({ ...reloaded, playerName: 'a'.repeat(40) }))).toThrow();
+ });
+ test('expanded projects, espresso/fairy lights, developer rank, and daily coding streak', () => {
+  expect(PROJECTS.length).toBe(8);
+  const s0 = buy(buy({ ...freshSave(), coins: 700 }, 'espresso'), 'lights');
+  expect(s0.coins).toBe(130);
+  expect(multiplier(s0)).toBeCloseTo(1.65);
+  expect(s0.decorated).toContain('lights');
+  // Day 1 ship
+  const day1 = Date.UTC(2026, 10, 10, 12, 0, 0);
+  const run1 = startProject(s0, 'playlist', day1);
+  const done1 = claim(run1, day1 + 120_000);
+  expect(done1.streak?.count).toBe(1);
+  // Same day second ship does not double-increment streak
+  const done1b = claim(startProject(done1, 'hello', day1 + 200_000), day1 + 220_000);
+  expect(done1b.streak?.count).toBe(1);
+  // Next day ship increments streak to 2
+  const day2 = day1 + 86_400_000;
+  const done2 = claim(startProject(done1b, 'bot', day2), day2 + 600_000);
+  expect(done2.streak?.count).toBe(2);
+  expect(parseSave(JSON.stringify(done2)).streak?.count).toBe(2);
+  expect(developerRank(0)).toBe('Curious Tinkerer');
+  expect(developerRank(3)).toBe('Junior Builder');
+  expect(developerRank(8)).toBe('Cozy Crafter');
+  expect(developerRank(16)).toBe('Indie Maker');
+  expect(developerRank(30)).toBe('Studio Legend');
+  expect(() => parseSave(JSON.stringify({ ...done2, streak: { count: -1, lastDay: '2026-11-10' } }))).toThrow();
  });
 });

@@ -1,24 +1,32 @@
 export const PROJECTS = [
   { id: 'hello', name: 'Hello, world', detail: 'One tiny program. One big beginning.', duration: 15_000, reward: 20 },
   { id: 'bug', name: 'Squash a bug', detail: 'It was a missing semicolon. Probably.', duration: 60_000, reward: 70 },
+  { id: 'playlist', name: 'Lo-fi beat script', detail: 'Code a chill rain-and-piano loop for late focus.', duration: 120_000, reward: 155 },
   { id: 'site', name: 'Build a little website', detail: 'A cozy corner of the internet.', duration: 300_000, reward: 400 },
+  { id: 'bot', name: 'Train a cozy chatbot', detail: 'Teach a tiny assistant to tell terrible dev puns.', duration: 600_000, reward: 850 },
+  { id: 'app', name: 'Launch a pocket app', detail: 'Smooth buttons, zero clutter, built with love.', duration: 1200_000, reward: 1750 },
   { id: 'game', name: 'Ship an indie game', detail: 'A small idea, ready for the world.', duration: 1800_000, reward: 2700 },
+  { id: 'os', name: 'Write a tiny OS', detail: 'Bootloader, kernel, and a blinking cursor from scratch.', duration: 3600_000, reward: 6000 },
 ];
 export const ITEMS = [
   { id: 'keyboard', name: 'Clicky keyboard', description: '+25% project earnings', price: 60, slot: 'equipment', bonus: .25 },
   { id: 'headphones', name: 'Cozy headphones', description: '+35% project earnings', price: 140, slot: 'equipment', bonus: .35 },
   { id: 'monitor', name: 'Dream monitor', description: '+50% project earnings', price: 240, slot: 'equipment', bonus: .5 },
+  { id: 'espresso', name: 'Espresso maker', description: '+65% project earnings', price: 420, slot: 'equipment', bonus: .65 },
   { id: 'plant', name: 'Leafy roommate', description: 'A little green on the windowsill', price: 35, slot: 'window', bonus: 0 },
   { id: 'lamp', name: 'Warm desk lamp', description: 'A soft amber glow for late hours', price: 65, slot: 'desk', bonus: 0 },
   { id: 'rug', name: 'Peachy rug', description: 'A soft landing for tired feet', price: 80, slot: 'floor', bonus: 0 },
   { id: 'poster', name: 'Moon print', description: 'For the big dreamer in a small room', price: 120, slot: 'wall', bonus: 0 },
+  { id: 'lights', name: 'Fairy lights', description: 'Warm little bulbs draped across your wall', price: 150, slot: 'wall', bonus: 0 },
 ];
 export const MILESTONES = [
  { id: 'first-ship', name: 'First launch', detail: 'Ship 1 project', reward: 25, check: (s: Save) => s.completed >= 1 },
  { id: 'steady-hands', name: 'Steady rhythm', detail: 'Ship 3 projects', reward: 50, check: (s: Save) => s.completed >= 3 },
  { id: 'cozy-nook', name: 'Cozy corner', detail: 'Own 2 upgrades or decor pieces', reward: 60, check: (s: Save) => s.owned.length >= 2 },
  { id: 'best-friend', name: 'Warm company', detail: 'Adopt the desk cat', reward: 75, check: (s: Save) => !!s.catOwned },
+ { id: 'streak-3', name: 'Three-day rhythm', detail: 'Reach a 3-day coding streak', reward: 100, check: (s: Save) => (s.streak?.count ?? 0) >= 3 },
  { id: 'dream-studio', name: 'Full studio', detail: 'Collect 5 upgrades or decor pieces', reward: 120, check: (s: Save) => s.owned.length >= 5 },
+ { id: 'veteran-dev', name: 'Indie maker', detail: 'Ship 10 projects', reward: 200, check: (s: Save) => s.completed >= 10 },
 ] as const;
 export type MilestoneId = typeof MILESTONES[number]['id'];
 export const ATMOSPHERES = [
@@ -30,8 +38,72 @@ export type Atmosphere = typeof ATMOSPHERES[number]['id'];
 export const DESK_CAT = { name: 'Desk cat', price: 100, description: 'A sleepy ginger friend for your coffee breaks.' };
 export const ENERGY_CAP = 3;
 export const ENERGY_REFILL_MS = 30 * 60_000;
-export type Save = { onboarded?: boolean; milestones?: MilestoneId[]; energy?: { count: number; rechargedAt: number }; catOwned?: boolean; atmosphere?: Atmosphere; version: 1; coins: number; completed: number; owned: string[]; decorated: string[]; active: null | { projectId: string; startedAt: number; duration: number; reward: number; boosted?: boolean } };
-export const freshSave = (): Save => ({ version: 1, coins: 0, completed: 0, owned: [], decorated: [], active: null });
+export type DeveloperStyle = 'curly' | 'straight' | 'cap' | 'bob';
+
+export const DEVELOPER_STYLES = [
+ { id: 'curly', name: 'Leo', subtitle: 'Sage Curls', description: 'Dark curls & sage hoodie', tag: 'Male' },
+ { id: 'straight', name: 'Maya', subtitle: 'Amber Bun', description: 'Topknot bun & warm peach hoodie', tag: 'Female' },
+ { id: 'cap', name: 'Kai', subtitle: 'Denim Cap', description: 'Backwards cap & denim hoodie', tag: 'Male' },
+ { id: 'bob', name: 'Zoe', subtitle: 'Cozy Bob', description: 'Wavy bob & lavender hoodie', tag: 'Female' },
+] as const;
+
+export const CURRENT_ONBOARDING_VERSION = 2;
+
+export type Save = {
+ onboarded?: boolean;
+ onboardingVersion?: number;
+ lastSeenRelease?: string;
+ playerName?: string;
+ streak?: { count: number; lastDay: string };
+ milestones?: MilestoneId[];
+ energy?: { count: number; rechargedAt: number };
+ catOwned?: boolean;
+ atmosphere?: Atmosphere;
+ developerStyle?: DeveloperStyle;
+ version: 1;
+ coins: number;
+ completed: number;
+ owned: string[];
+ decorated: string[];
+ active: null | { projectId: string; startedAt: number; duration: number; reward: number; boosted?: boolean };
+};
+
+export function developerRank(completed: number): string {
+ if (completed >= 30) return 'Studio Legend';
+ if (completed >= 16) return 'Indie Maker';
+ if (completed >= 8) return 'Cozy Crafter';
+ if (completed >= 3) return 'Junior Builder';
+ return 'Curious Tinkerer';
+}
+
+function localDayKey(ms: number): string {
+ const d = new Date(ms);
+ const y = d.getFullYear();
+ const m = String(d.getMonth() + 1).padStart(2, '0');
+ const day = String(d.getDate()).padStart(2, '0');
+ return `${y}-${m}-${day}`;
+}
+
+function nextStreak(prev: Save['streak'], now: number): { count: number; lastDay: string } {
+ const today = localDayKey(now);
+ if (!prev) return { count: 1, lastDay: today };
+ if (prev.lastDay === today) return prev;
+ const yesterday = localDayKey(now - 86_400_000);
+ return prev.lastDay === yesterday ? { count: prev.count + 1, lastDay: today } : { count: 1, lastDay: today };
+}
+export const freshSave = (): Save => ({ version: 1, coins: 0, completed: 0, owned: [], decorated: [], active: null, developerStyle: 'curly' });
+export function setDeveloperStyle(save: Save, style: DeveloperStyle): Save {
+ return DEVELOPER_STYLES.some(d => d.id === style) && save.developerStyle !== style ? { ...save, developerStyle: style } : save;
+}
+export function setPlayerName(save: Save, name: string): Save {
+ const cleaned = name.trim().slice(0, 24);
+ const nextName = cleaned.length > 0 ? cleaned : undefined;
+ if (save.playerName === nextName) return save;
+ const next = { ...save };
+ if (nextName) next.playerName = nextName;
+ else delete next.playerName;
+ return next;
+}
 export function multiplier(save: Save) { return 1 + ITEMS.filter(i => save.owned.includes(i.id)).reduce((n, i) => n + i.bonus, 0); }
 export function startProject(save: Save, id: string, now: number): Save {
   const project = PROJECTS.find(p => p.id === id);
@@ -41,7 +113,13 @@ export function startProject(save: Save, id: string, now: number): Save {
 export function progress(save: Save, now: number) { return save.active ? Math.min(1, Math.max(0, (now - save.active.startedAt) / save.active.duration)) : 0; }
 export function claim(save: Save, now: number): Save {
   if (!save.active || progress(save, now) < 1) return save;
-  return { ...save, coins: save.coins + save.active.reward, completed: save.completed + 1, active: null };
+  return {
+   ...save,
+   coins: save.coins + save.active.reward,
+   completed: save.completed + 1,
+   streak: nextStreak(save.streak, now),
+   active: null,
+  };
 }
 export function buy(save: Save, id: string): Save {
   const item = ITEMS.find(i => i.id === id);
@@ -89,12 +167,25 @@ export function claimMilestone(save: Save, id: MilestoneId): Save {
  if (!milestone || claimed.includes(id) || !milestone.check(save)) return save;
  return { ...save, coins: save.coins + milestone.reward, milestones: [...claimed, id] };
 }
-export function completeOnboarding(save: Save): Save {
- return save.onboarded ? save : { ...save, onboarded: true };
+export function completeOnboarding(save: Save, profile?: { name?: string; style?: DeveloperStyle; releaseId?: string }): Save {
+ let next = save;
+ if (profile?.name !== undefined) next = setPlayerName(next, profile.name);
+ if (profile?.style !== undefined) next = setDeveloperStyle(next, profile.style);
+ if (profile?.releaseId !== undefined) next = markReleaseSeen(next, profile.releaseId);
+ if (next.onboarded && next.onboardingVersion === CURRENT_ONBOARDING_VERSION && next === save) return save;
+ return { ...next, onboarded: true, onboardingVersion: CURRENT_ONBOARDING_VERSION };
+}
+export function markReleaseSeen(save: Save, releaseId: string): Save {
+ return save.lastSeenRelease === releaseId ? save : { ...save, lastSeenRelease: releaseId };
 }
 export function parseSave(raw: string): Save {
   const s = JSON.parse(raw);
   if (s.onboarded !== undefined && typeof s.onboarded !== 'boolean') throw Error('Invalid onboarding');
+  if (s.onboardingVersion !== undefined && (!Number.isInteger(s.onboardingVersion) || s.onboardingVersion < 0)) throw Error('Invalid onboarding version');
+  if (s.lastSeenRelease !== undefined && (typeof s.lastSeenRelease !== 'string' || s.lastSeenRelease.length > 32)) throw Error('Invalid release id');
+  if (s.playerName !== undefined && (typeof s.playerName !== 'string' || s.playerName.length > 24)) throw Error('Invalid player name');
+  if (s.streak !== undefined && (!s.streak || !Number.isInteger(s.streak.count) || s.streak.count < 0 || typeof s.streak.lastDay !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s.streak.lastDay))) throw Error('Invalid streak');
+  if (s.developerStyle !== undefined && !DEVELOPER_STYLES.some(d => d.id === s.developerStyle)) throw Error('Invalid developer style');
   const validMilestoneIds: string[] = MILESTONES.map(m => m.id);
   if (s.milestones !== undefined && (!Array.isArray(s.milestones) || new Set(s.milestones).size !== s.milestones.length || s.milestones.some((x: string) => !validMilestoneIds.includes(x)))) throw Error('Invalid milestones');
   if (s.energy !== undefined && (!s.energy || !Number.isInteger(s.energy.count) || s.energy.count < 0 || s.energy.count > ENERGY_CAP || !Number.isFinite(s.energy.rechargedAt) || s.energy.rechargedAt < 0)) throw Error('Invalid energy');

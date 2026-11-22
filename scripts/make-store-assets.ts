@@ -22,11 +22,14 @@ const fontDefs = `<defs>
     .n800 { font-family: 'Nunito800', 'Nunito', sans-serif; font-weight: 800; }
   </style>
   <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="125%">
-    <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#354F47" flood-opacity="0.10" />
+    <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#354F47" flood-opacity="0.11" />
   </filter>
   <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
-    <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#354F47" flood-opacity="0.06" />
+    <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#354F47" flood-opacity="0.08" />
   </filter>
+  <clipPath id="studioClip">
+    <rect x="0" y="0" width="780" height="1116" rx="46" />
+  </clipPath>
 </defs>`;
 
 function roomSvg({
@@ -36,10 +39,14 @@ function roomSvg({
   plant = true,
   rug = true,
   poster = true,
+  lights = true,
+  espresso = true,
+  headphones = true,
   keyboard = true,
   monitor = true,
   working = true,
   celebrating = false,
+  screenMode = 'editor',
 }: {
   atmosphere?: 'sunny' | 'rainy' | 'moonlit';
   catOwned?: boolean;
@@ -47,10 +54,14 @@ function roomSvg({
   plant?: boolean;
   rug?: boolean;
   poster?: boolean;
+  lights?: boolean;
+  espresso?: boolean;
+  headphones?: boolean;
   keyboard?: boolean;
   monitor?: boolean;
   working?: boolean;
   celebrating?: boolean;
+  screenMode?: 'editor' | 'studio';
 }) {
   const night = atmosphere === 'moonlit';
   const rain = atmosphere === 'rainy';
@@ -140,6 +151,55 @@ function roomSvg({
          <circle cx="24" cy="39" r="2" fill="#FFF8DE"/><circle cx="72" cy="71" r="1.5" fill="#FFF8DE"/><circle cx="42" cy="88" r="1.5" fill="#FFF8DE"/>
        </g>`;
 
+  const sw = monitor ? 77 : 55;
+  const monitorDisplay =
+    screenMode === 'studio'
+      ? `<g>
+          <rect x="235" y="134" width="${sw}" height="48" rx="3" fill="#23322E"/>
+          <line x1="239" y1="144" x2="266" y2="144" stroke="#E9A4AA" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="241" y1="151" x2="268" y2="151" stroke="#9AD1AE" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="241" y1="158" x2="264" y2="158" stroke="#F6D488" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="239" y1="165" x2="266" y2="165" stroke="#C7B6E8" stroke-width="1.8" stroke-linecap="round"/>
+          <rect x="275" y="138" width="${sw - 43}" height="40" rx="3" fill="#F8FAF2"/>
+          <rect x="278" y="142" width="${sw - 49}" height="13" rx="2" fill="#D5E7CE"/>
+          <line x1="278" y1="160" x2="${235 + sw - 7}" y2="160" stroke="#8EA597" stroke-width="2" stroke-linecap="round"/>
+          <rect x="278" y="165" width="${sw - 49}" height="6" rx="2" fill="#5C8A74"/>
+        </g>`
+      : `<g>
+          <rect x="235" y="134" width="${sw}" height="48" rx="3" fill="#23322E"/>
+          <rect x="235" y="134" width="11" height="48" rx="2" fill="#1B2824"/>
+          <line x1="238" y1="142" x2="243" y2="142" stroke="#6E8E81" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="238" y1="148" x2="243" y2="148" stroke="#88B59B" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="248" y="153" width="${sw - 15}" height="6" rx="1.5" fill="#314640"/>
+          <line x1="250" y1="143" x2="262" y2="143" stroke="#E9A4AA" stroke-width="2" stroke-linecap="round"/>
+          <line x1="266" y1="143" x2="286" y2="143" stroke="#9AD1AE" stroke-width="2" stroke-linecap="round"/>
+          <line x1="253" y1="149" x2="274" y2="149" stroke="#F6D488" stroke-width="2" stroke-linecap="round"/>
+          <line x1="253" y1="156" x2="270" y2="156" stroke="#C7B6E8" stroke-width="2" stroke-linecap="round"/>
+          <line x1="274" y1="156" x2="294" y2="156" stroke="#D5E8DC" stroke-width="2" stroke-linecap="round"/>
+          <line x1="253" y1="163" x2="279" y2="163" stroke="#9AD1AE" stroke-width="2" stroke-linecap="round"/>
+          <line x1="250" y1="170" x2="266" y2="170" stroke="#E9A4AA" stroke-width="2" stroke-linecap="round"/>
+        </g>`;
+
+  const fairyLights = lights
+    ? `<g>
+        <path d="M12 14 Q96 34 185 18 Q280 34 388 12" fill="none" stroke="${stroke}" stroke-width="2"/>
+        ${[
+          [46, 21],
+          [94, 26],
+          [142, 23],
+          [218, 22],
+          [268, 26],
+          [322, 22],
+          [364, 16],
+        ]
+          .map(
+            ([lx, ly]) =>
+              `<circle cx="${lx}" cy="${ly + 4}" r="8" fill="#FFEAA7" opacity="${night ? 0.55 : 0.3}"/><circle cx="${lx}" cy="${ly + 4}" r="3.2" fill="#FFF7D6" stroke="#D6A954" stroke-width="1"/>`
+          )
+          .join('')}
+      </g>`
+    : '';
+
   return `<svg viewBox="0 0 400 354" width="100%" height="100%">
     <rect width="400" height="354" rx="28" fill="${wall}"/>
     <path d="M0 259 Q200 242 400 259 V354 H0Z" fill="${night ? '#B6A89F' : '#D5BC9E'}"/>
@@ -157,6 +217,7 @@ function roomSvg({
     <rect x="282" y="22" width="13" height="30" rx="3" fill="#E69F82" stroke="${stroke}" stroke-width="2"/>
     <rect x="297" y="17" width="13" height="35" rx="3" fill="#F8D37F" stroke="${stroke}" stroke-width="2"/>
     <path d="M316 30 L325 26 L335 50 L326 54Z" fill="#91B8A6" stroke="${stroke}" stroke-width="2"/>
+    ${fairyLights}
     ${poster ? `<g><rect x="198" y="33" width="53" height="70" rx="4" fill="#FDF6DE" stroke="${stroke}" stroke-width="3"/><rect x="204" y="39" width="41" height="58" fill="#777EA8"/><path d="M229 49 A15 15 0 1 0 235 75 A17 17 0 0 1 229 49" fill="#F9DC9B"/><circle cx="214" cy="49" r="2" fill="#FFF5D2"/></g>` : ''}
     ${rug ? `<ellipse cx="210" cy="311" rx="127" ry="29" fill="#E9A68E" stroke="#B87764" stroke-width="3"/>` : ''}
     <ellipse cx="205" cy="306" rx="87" ry="17" fill="#9B806A" opacity=".2"/>
@@ -164,14 +225,15 @@ function roomSvg({
     <path d="M108 220 L101 303 M291 220 L299 303" stroke="#BA9676" stroke-width="7" stroke-linecap="round"/>
     <rect x="83" y="207" width="232" height="18" rx="8" fill="#D9AD85" stroke="${stroke}" stroke-width="4"/>
     <rect x="228" y="127" width="${monitor ? 91 : 69}" height="65" rx="8" fill="${monitor ? '#B7A6D8' : '#667D75'}" stroke="${stroke}" stroke-width="4"/>
-    <rect x="235" y="134" width="${monitor ? 77 : 55}" height="48" rx="3" fill="#D0E6C3"/>
-    <path d="M246 147 L253 152 L246 157 M261 160 H275" fill="none" stroke="#658A6C" stroke-width="3" stroke-linecap="round"/>
+    ${monitorDisplay}
     <path d="M263 193 V204 M250 205 H278" stroke="${stroke}" stroke-width="5" stroke-linecap="round"/>
     <rect x="211" y="200" width="69" height="7" rx="3" fill="${keyboard ? '#E9A4AA' : '#71867D'}" stroke="${stroke}" stroke-width="2"/>
-    ${lamp ? `<g><ellipse cx="182" cy="187" rx="22" ry="13" fill="#FFF3B8" opacity="${night ? '.45' : '.28'}"/><path d="M180 205 H196 M188 205 V186 L181 174" stroke="${stroke}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M170 175 Q179 164 189 175Z" fill="#F6C376" stroke="${stroke}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="179" cy="176" r="3" fill="#FFF7D6"/></g>` : ''}
+    ${lamp ? `<g><ellipse cx="182" cy="187" rx="22" ry="13" fill="#FFF3B8" opacity="${night ? '.48' : '.28'}"/><path d="M180 205 H196 M188 205 V186 L181 174" stroke="${stroke}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M170 175 Q179 164 189 175Z" fill="#F6C376" stroke="${stroke}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="179" cy="176" r="3" fill="#FFF7D6"/></g>` : ''}
     <rect x="137" y="187" width="20" height="20" rx="5" fill="#FFF4D9" stroke="${stroke}" stroke-width="3"/>
     <path d="M157 190 Q167 191 158 201" fill="none" stroke="${stroke}" stroke-width="3"/>
     <path d="M144 178 Q139 173 146 167" fill="none" stroke="#8C9D8B" stroke-width="2" stroke-linecap="round"/>
+    ${espresso ? `<g><rect x="87" y="172" width="24" height="34" rx="5" fill="#7FA692" stroke="${stroke}" stroke-width="2.8"/><rect x="91" y="177" width="16" height="8" rx="2" fill="#FDF6DE" stroke="${stroke}" stroke-width="1.8"/><circle cx="96" cy="181" r="1.5" fill="#D97A64"/><circle cx="102" cy="181" r="1.5" fill="#658A6C"/><rect x="93" y="191" width="12" height="12" rx="2" fill="#4D5C55"/><rect x="95" y="196" width="8" height="7" rx="2" fill="#FFF4D9"/></g>` : ''}
+    ${headphones ? `<g><path d="M291 196 A10 10 0 0 1 309 196" fill="none" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><rect x="287" y="194" width="6" height="11" rx="3" fill="#E69F82" stroke="${stroke}" stroke-width="2"/><rect x="307" y="194" width="6" height="11" rx="3" fill="#E69F82" stroke="${stroke}" stroke-width="2"/></g>` : ''}
     ${plant ? `<g><path d="M48 143 H74 L70 161 H52Z" fill="#EAA787" stroke="${stroke}" stroke-width="2"/><path d="M61 144 V117" stroke="${stroke}" stroke-width="3"/><ellipse cx="51" cy="125" rx="9" ry="5" fill="#749E70" transform="rotate(30 51 125)"/><ellipse cx="70" cy="115" rx="10" ry="5" fill="#749E70" transform="rotate(-35 70 115)"/></g>` : ''}
     ${celebrating ? `<rect x="166" y="231" width="47" height="34" rx="13" fill="#A4BFAE" stroke="${stroke}" stroke-width="4"/>` : ''}
     <rect x="162" y="265" width="62" height="10" rx="5" fill="#8AABA0" stroke="${stroke}" stroke-width="4"/>
@@ -185,6 +247,49 @@ function roomSvg({
   </svg>`;
 }
 
+// Mascot Portrait Bust helper for Screenshot 3
+function mascotCardSvg(x: number, y: number, w: number, name: string, sub: string, tag: string, bg: string, hoodie: string, hair: string, skin: string, variant: 'curly' | 'straight' | 'cap' | 'bob', selected: boolean) {
+  const ink = '#4D5C55';
+  const backHair =
+    variant === 'bob'
+      ? `<path d="M148 202 Q144 166 155 144 Q190 128 227 144 Q238 166 234 202 Q224 209 216 198 V165 H165 V198 Q156 209 148 202Z" fill="${hair}" stroke="${ink}" stroke-width="3.2"/>`
+      : variant === 'straight'
+      ? `<circle cx="191" cy="123" r="14" fill="${hair}" stroke="${ink}" stroke-width="3.2"/>`
+      : '';
+  const frontHair =
+    variant === 'cap'
+      ? `<path d="M153 164 Q152 131 191 128 Q230 131 229 164 Q211 155 191 156 Q171 155 153 164Z" fill="#E67D68" stroke="${ink}" stroke-width="3.2"/><path d="M161 157 Q191 151 221 157" fill="none" stroke="#D36B58" stroke-width="3" stroke-linecap="round"/>`
+      : variant === 'straight'
+      ? `<path d="M155 168 Q154 135 191 133 Q227 135 226 168 Q216 154 202 150 Q191 156 178 150 Q164 155 155 168Z" fill="${hair}" stroke="${ink}" stroke-width="3.2"/>`
+      : variant === 'bob'
+      ? `<path d="M153 174 Q151 137 191 133 Q230 137 228 174 Q218 157 205 151 Q191 162 175 152 Q162 158 153 174Z" fill="${hair}" stroke="${ink}" stroke-width="3.2"/>`
+      : `<path d="M155 173 Q148 166 153 153 Q148 143 161 139 Q160 127 176 132 Q186 121 198 131 Q213 126 219 140 Q230 143 226 158 L224 170 Q216 165 211 153 Q202 163 190 155 Q177 168 165 161 L162 174Z" fill="${hair}" stroke="${ink}" stroke-width="3.2"/>`;
+
+  return `<g transform="translate(${x}, ${y})">
+    <rect x="0" y="0" width="${w}" height="248" rx="30" fill="${selected ? '#EEF5E8' : '#FFFFFF'}" stroke="${selected ? '#426E5C' : '#E3E9DC'}" stroke-width="${selected ? 3 : 2}"/>
+    ${selected ? `<circle cx="${w - 28}" cy="28" r="15" fill="#426E5C"/><path d="M${w - 34} 28 l4 4 l8 -8" fill="none" stroke="#FFFDF4" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+    <rect x="${w / 2 - 52}" y="22" width="104" height="104" rx="34" fill="${bg}"/>
+    <svg x="${w / 2 - 52}" y="22" width="104" height="104" viewBox="132 106 118 128">
+      ${backHair}
+      <path d="M148 238 Q152 208 171 202 Q191 196 211 202 Q230 208 234 238Z" fill="${hoodie}" stroke="${ink}" stroke-width="3.6"/>
+      <path d="M184 196 V209 Q191 214 198 209 V196" fill="${skin}" stroke="${ink}" stroke-width="3"/>
+      <ellipse cx="157" cy="177" rx="6.5" ry="8.5" fill="${skin}" stroke="${ink}" stroke-width="3"/>
+      <ellipse cx="225" cy="177" rx="6.5" ry="8.5" fill="${skin}" stroke="${ink}" stroke-width="3"/>
+      <path d="M158 165 Q158 137 191 136 Q223 137 224 167 L222 185 Q218 207 191 209 Q161 207 159 185Z" fill="${skin}" stroke="${ink}" stroke-width="3.6"/>
+      ${frontHair}
+      <circle cx="176" cy="177" r="2.8" fill="${ink}"/>
+      <circle cx="206" cy="177" r="2.8" fill="${ink}"/>
+      <ellipse cx="169" cy="187" rx="5.5" ry="2.8" fill="#DBA086" opacity=".75"/>
+      <ellipse cx="213" cy="187" rx="5.5" ry="2.8" fill="#DBA086" opacity=".75"/>
+      <path d="M184 191 Q191 197 198 191" fill="none" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/>
+    </svg>
+    <text x="${w / 2}" y="162" text-anchor="middle" class="f600" font-size="25" fill="#354F47">${name}</text>
+    <text x="${w / 2}" y="188" text-anchor="middle" class="n600" font-size="18" fill="#788A7E">${sub}</text>
+    <rect x="${w / 2 - 42}" y="202" width="84" height="28" rx="14" fill="${selected ? '#DCEAD0' : '#F3F6EE'}"/>
+    <text x="${w / 2}" y="221" text-anchor="middle" class="n800" font-size="14" fill="${selected ? '#426E5C' : '#788A7E'}">${tag}</text>
+  </g>`;
+}
+
 // 1. Feature Graphic (1024 x 500)
 const featureGraphicSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
   ${fontDefs}
@@ -192,33 +297,30 @@ const featureGraphicSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" 
   <circle cx="120" cy="60" r="240" fill="#E5EEDC" opacity="0.65"/>
   <circle cx="920" cy="450" r="260" fill="#F7E4D1" opacity="0.55"/>
 
-  <!-- Left Editorial Branding -->
-  <g transform="translate(76, 92)">
-    <rect x="0" y="0" width="214" height="38" rx="19" fill="#E5EEDC"/>
+  <g transform="translate(72, 84)">
+    <rect x="0" y="0" width="248" height="38" rx="19" fill="#E5EEDC"/>
     <circle cx="22" cy="19" r="5" fill="#426E5C"/>
-    <text x="38" y="24" class="n800" font-size="14" fill="#426E5C" letter-spacing="1.2">COZY OFFLINE STUDIO</text>
+    <text x="38" y="24" class="n800" font-size="13.5" fill="#426E5C" letter-spacing="1.2">REMEMBER CODING BY HAND</text>
 
-    <text x="0" y="124" class="f600" font-size="88" fill="#354F47">Nib<tspan fill="#D69F6A">.</tspan></text>
-    <text x="2" y="176" class="f500" font-size="30" fill="#354F47">Code small things.</text>
-    <text x="2" y="214" class="f500" font-size="30" fill="#426E5C">Build a quiet little room.</text>
+    <text x="0" y="122" class="f600" font-size="88" fill="#354F47">Nib<tspan fill="#D69F6A">.</tspan></text>
+    <text x="2" y="174" class="f500" font-size="29" fill="#354F47">Quiet focus. Real craft.</text>
+    <text x="2" y="210" class="f500" font-size="29" fill="#426E5C">A cozy offline dev studio.</text>
 
-    <text x="2" y="264" class="n600" font-size="18" fill="#788A7E">Pick a timed coding project, adopt a sleepy</text>
-    <text x="2" y="290" class="n600" font-size="18" fill="#788A7E">desk cat, and make your studio feel like home.</text>
+    <text x="2" y="260" class="n600" font-size="17.5" fill="#788A7E">Pick a mascot, watch live terminal logs,</text>
+    <text x="2" y="286" class="n600" font-size="17.5" fill="#788A7E">pet your desk cat, and ship small projects.</text>
 
-    <!-- Feature Pills -->
-    <g transform="translate(0, 322)">
-      <rect x="0" y="0" width="148" height="40" rx="20" fill="#F7EDCE"/>
-      <text x="74" y="25" text-anchor="middle" class="n800" font-size="14" fill="#A47A2A">100% Offline</text>
-      <rect x="160" y="0" width="166" height="40" rx="20" fill="#FFFFFF" stroke="#E4EADB" stroke-width="1.5"/>
-      <text x="243" y="25" text-anchor="middle" class="n800" font-size="14" fill="#354F47">No Ads · No Stress</text>
+    <g transform="translate(0, 320)">
+      <rect x="0" y="0" width="144" height="40" rx="20" fill="#F7EDCE"/>
+      <text x="72" y="25" text-anchor="middle" class="n800" font-size="14" fill="#A47A2A">100% Offline</text>
+      <rect x="156" y="0" width="186" height="40" rx="20" fill="#FFFFFF" stroke="#E4EADB" stroke-width="1.5"/>
+      <text x="249" y="25" text-anchor="middle" class="n800" font-size="14" fill="#354F47">No Ads · No AI Hype</text>
     </g>
   </g>
 
-  <!-- Right Room Illustration Card -->
   <g transform="translate(520, 44)" filter="url(#cardShadow)">
     <rect x="-10" y="-10" width="452" height="404" rx="38" fill="#FFFFFF"/>
     <svg x="0" y="0" width="432" height="382" viewBox="0 0 400 354">
-      ${roomSvg({ atmosphere: 'sunny', catOwned: true, lamp: true, plant: true, rug: true, poster: true, keyboard: true, monitor: true, working: true })}
+      ${roomSvg({ atmosphere: 'sunny', catOwned: true, lamp: true, plant: true, rug: true, poster: true, lights: true, espresso: true, headphones: true, keyboard: true, monitor: true, working: true, screenMode: 'editor' })}
     </svg>
   </g>
 </svg>`;
@@ -242,259 +344,290 @@ function phoneFrame({
     <circle cx="140" cy="180" r="360" fill="${bgAccent}" opacity="0.6"/>
     <circle cx="960" cy="1720" r="420" fill="#F7E4D1" opacity="0.5"/>
 
-    <!-- Top Marketing Header -->
-    <g transform="translate(540, 118)">
-      <rect x="-150" y="0" width="300" height="48" rx="24" fill="#E5EEDC"/>
-      <text x="0" y="31" text-anchor="middle" class="n800" font-size="18" fill="#426E5C" letter-spacing="1.6">${pill}</text>
-      <text x="0" y="122" text-anchor="middle" class="f600" font-size="64" fill="#354F47">${headline}</text>
-      <text x="0" y="178" text-anchor="middle" class="n600" font-size="30" fill="#788A7E">${subhead}</text>
+    <g transform="translate(540, 114)">
+      <rect x="-175" y="0" width="350" height="48" rx="24" fill="#E5EEDC"/>
+      <text x="0" y="31" text-anchor="middle" class="n800" font-size="17" fill="#426E5C" letter-spacing="1.5">${pill}</text>
+      <text x="0" y="122" text-anchor="middle" class="f600" font-size="62" fill="#354F47">${headline}</text>
+      <text x="0" y="178" text-anchor="middle" class="n600" font-size="29" fill="#788A7E">${subhead}</text>
     </g>
 
-    <!-- Phone Container -->
-    <g transform="translate(96, 360)" filter="url(#cardShadow)">
-      <rect x="0" y="0" width="888" height="1450" rx="68" fill="#354F47"/>
-      <rect x="16" y="16" width="856" height="1418" rx="54" fill="#F8FAF2"/>
-      <!-- Camera Pill -->
-      <rect x="394" y="34" width="100" height="12" rx="6" fill="#DCE5D5"/>
-      <g transform="translate(54, 76)">
+    <g transform="translate(96, 356)" filter="url(#cardShadow)">
+      <rect x="0" y="0" width="888" height="1460" rx="68" fill="#354F47"/>
+      <rect x="16" y="16" width="856" height="1428" rx="54" fill="#F8FAF2"/>
+      <rect x="394" y="32" width="100" height="12" rx="6" fill="#DCE5D5"/>
+      <g transform="translate(54, 72)">
         ${screenContent}
       </g>
     </g>
   </svg>`;
 }
 
-// App Header inside phone (width 780)
-function appHeader(coins: string, energy = '3/3') {
+// Sticky Header inside phone (width 780)
+function appHeader(coins: string, energy = '3/3', badge = 2) {
   return `<g transform="translate(0, 0)">
-    <text x="0" y="54" class="f600" font-size="56" fill="#354F47">Nib<tspan fill="#D69F6A">.</tspan></text>
-    <g transform="translate(490, 8)">
-      <rect x="0" y="0" width="118" height="58" rx="29" fill="#E6EEDC"/>
-      <text x="59" y="37" text-anchor="middle" class="n800" font-size="24" fill="#426E5C">☕ ${energy}</text>
-      <rect x="132" y="0" width="158" height="58" rx="29" fill="#F7EDCE"/>
-      <circle cx="166" cy="29" r="14" fill="#A47A2A"/>
-      <text x="166" y="35" text-anchor="middle" class="n800" font-size="17" fill="#FFFDF4">$</text>
-      <text x="234" y="38" text-anchor="middle" class="f600" font-size="30" fill="#354F47">${coins}</text>
+    <text x="0" y="52" class="f600" font-size="54" fill="#354F47">Nib<tspan fill="#D69F6A">.</tspan></text>
+    <g transform="translate(414, 6)">
+      <rect x="0" y="0" width="114" height="56" rx="28" fill="#E6EEDC"/>
+      <text x="57" y="36" text-anchor="middle" class="n800" font-size="22" fill="#426E5C">${energy}</text>
+      <rect x="126" y="0" width="152" height="56" rx="28" fill="#F7EDCE"/>
+      <circle cx="158" cy="28" r="13" fill="#A47A2A"/>
+      <text x="158" y="34" text-anchor="middle" class="n800" font-size="16" fill="#FFFDF4">$</text>
+      <text x="224" y="37" text-anchor="middle" class="f600" font-size="28" fill="#354F47">${coins}</text>
+      <rect x="290" y="0" width="66" height="56" rx="20" fill="#F7EDCE" stroke="#E5CFA0" stroke-width="2"/>
+      <circle cx="323" cy="24" r="9" fill="none" stroke="#A47A2A" stroke-width="2.5"/>
+      <path d="M318 32 l-2 11 l7 -4 l7 4 l-2 -11" fill="none" stroke="#A47A2A" stroke-width="2.3" stroke-linejoin="round"/>
+      ${badge > 0 ? `<circle cx="352" cy="4" r="14" fill="#A47A2A" stroke="#F8FAF2" stroke-width="3"/><text x="352" y="10" text-anchor="middle" class="n800" font-size="15" fill="#FFFDF4">${badge}</text>` : ''}
     </g>
+    <line x1="-20" y1="76" x2="800" y2="76" stroke="#E8EDE0" stroke-width="2"/>
   </g>`;
 }
 
-// Screenshot 1: Cozy Studio & Active Project
+// Icon-only Bottom Navigation Bar inside phone (y=1246, width=780)
+function bottomTabBar(active: 'studio' | 'projects' | 'settings') {
+  return `<g transform="translate(0, 1236)">
+    <line x1="-20" y1="0" x2="800" y2="0" stroke="#E8EDE0" stroke-width="2"/>
+    <rect x="0" y="16" width="780" height="84" rx="30" fill="#EEF3E7"/>
+    <!-- Tab 1: Studio -->
+    <rect x="10" y="24" width="246" height="68" rx="22" fill="${active === 'studio' ? '#FFFFFF' : 'transparent'}"/>
+    <path d="M119 60 L133 46 L147 60 M123 56 V71 H143 V56" fill="none" stroke="${active === 'studio' ? '#426E5C' : '#788A7E'}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Tab 2: Projects -->
+    <rect x="267" y="24" width="246" height="68" rx="22" fill="${active === 'projects' ? '#FFFFFF' : 'transparent'}"/>
+    <path d="M376 50 H404 M376 60 H404 M376 70 H396" fill="none" stroke="${active === 'projects' ? '#426E5C' : '#788A7E'}" stroke-width="3.2" stroke-linecap="round"/>
+    <!-- Tab 3: Settings -->
+    <rect x="524" y="24" width="246" height="68" rx="22" fill="${active === 'settings' ? '#FFFFFF' : 'transparent'}"/>
+    <circle cx="647" cy="60" r="10" fill="none" stroke="${active === 'settings' ? '#426E5C' : '#788A7E'}" stroke-width="3.2"/>
+    <circle cx="647" cy="60" r="3" fill="${active === 'settings' ? '#426E5C' : '#788A7E'}"/>
+  </g>`;
+}
+
+// Screenshot 1: Full-Screen Studio + Interactive Dev Terminal + Live Code Editor Monitor
 const shot1Screen = `
-  ${appHeader('340', '3/3')}
-  <g transform="translate(0, 88)">
-    <svg x="0" y="0" width="780" height="690" viewBox="0 0 400 354">
-      ${roomSvg({ atmosphere: 'sunny', catOwned: true, lamp: true, plant: true, rug: true, poster: true, keyboard: true, monitor: true, working: true })}
-    </svg>
-    <g transform="translate(8, 718)">
-      <circle cx="8" cy="-7" r="5" fill="#789B78"/>
-      <text x="24" y="0" class="n600" font-size="22" fill="#354F47">In the zone</text>
-      <text x="764" y="0" text-anchor="end" class="n600" font-size="22" fill="#788A7E">12 shipped</text>
+  ${appHeader('480', '3/3', 2)}
+  <g transform="translate(0, 96)">
+    <!-- Rounded Full-Screen Studio Card (clipped cleanly to 46px radius) -->
+    <g clip-path="url(#studioClip)">
+      <rect x="0" y="0" width="780" height="1116" fill="#E2EDE2"/>
+      <rect x="0" y="810" width="780" height="306" fill="#D5BC9E"/>
+      <line x1="0" y1="810" x2="780" y2="810" stroke="#B5997F" stroke-width="4"/>
+      <svg x="-30" y="290" width="840" height="743" viewBox="0 0 400 354">
+        ${roomSvg({ atmosphere: 'sunny', catOwned: true, lamp: true, plant: true, rug: true, poster: true, lights: true, espresso: true, headphones: true, keyboard: true, monitor: true, working: true, screenMode: 'editor' })}
+      </svg>
     </g>
-    <!-- Upgrades Bar -->
-    <g transform="translate(0, 742)">
-      <rect x="0" y="0" width="780" height="104" rx="32" fill="#FFFFFF" stroke="#E6EBDE" stroke-width="2"/>
-      <rect x="22" y="20" width="64" height="64" rx="22" fill="#F7E4D1"/>
-      <path d="M42 46 h24 l-2 22 h-20 z M48 46 v-5 a6 6 0 0 1 12 0 v5" fill="none" stroke="#354F47" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="108" y="47" class="n800" font-size="25" fill="#354F47">Upgrades</text>
-      <text x="108" y="77" class="n600" font-size="20" fill="#788A7E">1 milestone reward waiting</text>
-      <rect x="652" y="32" width="60" height="40" rx="16" fill="#F7EDCE"/>
-      <text x="682" y="59" text-anchor="middle" class="n800" font-size="20" fill="#A47A2A">+1</text>
-      <text x="742" y="60" text-anchor="middle" class="n800" font-size="28" fill="#426E5C">→</text>
+    <rect x="0" y="0" width="780" height="1116" rx="46" fill="none" stroke="#E1E9DA" stroke-width="3"/>
+
+    <!-- Interactive Multi-Line Dev Terminal Overlay -->
+    <g transform="translate(24, 24)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="732" height="264" rx="26" fill="#22332EF5" stroke="#3D544C" stroke-width="2"/>
+      <rect x="0" y="0" width="732" height="44" rx="20" fill="#1B2824"/>
+      <circle cx="24" cy="22" r="6" fill="#E37A6F"/>
+      <circle cx="44" cy="22" r="6" fill="#E4BF64"/>
+      <circle cx="64" cy="22" r="6" fill="#6FA882"/>
+      <text x="366" y="28" text-anchor="middle" class="n800" font-size="16" fill="#98B3A7">elorm@studio · dev-server</text>
+
+      <text x="22" y="78" class="n800" font-size="18" fill="#7AC993">elorm:~$ <tspan fill="#FFFFFF">gh auth status</tspan></text>
+      <text x="22" y="106" class="n600" font-size="17" fill="#8AE0A4">› logged in to github.com as elorm</text>
+      <text x="22" y="134" class="n600" font-size="17" fill="#F6D98B">› tuning warm Rhodes piano chords @ 72 BPM</text>
+      <text x="22" y="162" class="n600" font-size="17" fill="#CBE0D4">› hmr: updated module in 11ms · 0 errors</text>
+
+      <!-- Interactive Quick Command Chips -->
+      <rect x="0" y="182" width="732" height="48" fill="#1C2A26"/>
+      <rect x="20" y="191" width="114" height="30" rx="12" fill="#2B3E38" stroke="#3E574F" stroke-width="1.5"/>
+      <text x="77" y="211" text-anchor="middle" class="n800" font-size="15" fill="#B9D6C7">git status</text>
+      <rect x="146" y="191" width="102" height="30" rx="12" fill="#2B3E38" stroke="#3E574F" stroke-width="1.5"/>
+      <text x="197" y="211" text-anchor="middle" class="n800" font-size="15" fill="#B9D6C7">whoami</text>
+      <rect x="260" y="191" width="90" height="30" rx="12" fill="#2B3E38" stroke="#3E574F" stroke-width="1.5"/>
+      <text x="305" y="211" text-anchor="middle" class="n800" font-size="15" fill="#B9D6C7">coffee</text>
+      <rect x="362" y="191" width="80" height="30" rx="12" fill="#2B3E38" stroke="#3E574F" stroke-width="1.5"/>
+      <text x="402" y="211" text-anchor="middle" class="n800" font-size="15" fill="#B9D6C7">clear</text>
+
+      <!-- Progress bar -->
+      <rect x="20" y="242" width="636" height="8" rx="4" fill="#354B43"/>
+      <rect x="20" y="242" width="440" height="8" rx="4" fill="#7AC993"/>
+      <text x="710" y="251" text-anchor="end" class="n800" font-size="15" fill="#89A89A">69%</text>
     </g>
-    <!-- Active Focus Card -->
-    <g transform="translate(0, 870)">
-      <rect x="0" y="0" width="780" height="390" rx="36" fill="#EEF3E7"/>
-      <text x="34" y="48" class="n800" font-size="16" fill="#788A7E" letter-spacing="2">A LITTLE FOCUS</text>
-      <text x="34" y="92" class="f500" font-size="36" fill="#354F47">Build a little website</text>
-      <rect x="34" y="122" width="712" height="18" rx="9" fill="#DCE5D5"/>
-      <rect x="34" y="122" width="485" height="18" rx="9" fill="#83A68B"/>
-      <text x="34" y="178" class="n600" font-size="21" fill="#788A7E">Keeps going while you’re away.</text>
-      <text x="746" y="178" text-anchor="end" class="n800" font-size="24" fill="#354F47">01:36</text>
-      <rect x="34" y="214" width="712" height="82" rx="26" fill="#E5EEDC"/>
-      <text x="390" y="264" text-anchor="middle" class="n800" font-size="25" fill="#426E5C">Boost · 1 energy</text>
-      <text x="390" y="338" text-anchor="middle" class="n600" font-size="19" fill="#788A7E">Remove 25% of the time left · once per project</text>
+
+    <!-- Floating Ambient Status Pill -->
+    <g transform="translate(154, 1024)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="472" height="66" rx="33" fill="#FFFFFFF2" stroke="#E0E7D6" stroke-width="2"/>
+      <circle cx="34" cy="33" r="8" fill="#5C946E"/>
+      <text x="58" y="40" class="n800" font-size="20" fill="#354F47">Coding Lo-fi beat script · 00:38</text>
     </g>
   </g>
+  ${bottomTabBar('studio')}
 `;
 
-// Screenshot 2: Moonlit Studio & Ready to Collect Celebration
+// Screenshot 2: Projects Tab with Rank, Daily Streak, Coffee Boost & New Projects
 const shot2Screen = `
-  ${appHeader('1,280', '2/3')}
-  <g transform="translate(0, 88)">
-    <svg x="0" y="0" width="780" height="690" viewBox="0 0 400 354">
-      ${roomSvg({ atmosphere: 'moonlit', catOwned: true, lamp: true, plant: true, rug: true, poster: true, keyboard: true, monitor: true, working: false, celebrating: true })}
-    </svg>
-    <g transform="translate(8, 718)">
-      <circle cx="8" cy="-7" r="5" fill="#789B78"/>
-      <text x="24" y="0" class="n600" font-size="22" fill="#354F47">A little victory awaits</text>
-      <text x="764" y="0" text-anchor="end" class="n600" font-size="22" fill="#788A7E">18 shipped</text>
-    </g>
-    <!-- Ready to Ship Card -->
-    <g transform="translate(0, 748)">
-      <rect x="0" y="0" width="780" height="310" rx="36" fill="#EEF3E7"/>
-      <text x="34" y="48" class="n800" font-size="16" fill="#788A7E" letter-spacing="2">NICELY DONE, LITTLE DEV</text>
-      <text x="34" y="92" class="f500" font-size="36" fill="#354F47">Ready to ship!</text>
-      <rect x="34" y="120" width="712" height="18" rx="9" fill="#83A68B"/>
-      <text x="34" y="174" class="n600" font-size="21" fill="#788A7E">Your project is finished.</text>
-      <text x="746" y="174" text-anchor="end" class="n800" font-size="24" fill="#A47A2A">+700 coins</text>
-      <rect x="34" y="202" width="712" height="82" rx="26" fill="#426E5C"/>
-      <text x="390" y="252" text-anchor="middle" class="n800" font-size="26" fill="#FFFDF4">Collect 700 coins</text>
-    </g>
-    <!-- Project Card Preview -->
-    <g transform="translate(0, 1086)">
-      <rect x="0" y="0" width="780" height="176" rx="34" fill="#FFFFFF" stroke="#E9EEE2" stroke-width="2"/>
-      <rect x="28" y="28" width="76" height="76" rx="24" fill="#EBEFDD"/>
-      <text x="66" y="76" text-anchor="middle" class="n800" font-size="32" fill="#354F47">&lt;/&gt;</text>
-      <text x="126" y="60" class="n800" font-size="26" fill="#354F47">Ship an indie game</text>
-      <text x="126" y="96" class="n600" font-size="21" fill="#788A7E">30 min · 4,725 coins (1.75× earnings)</text>
-      <text x="28" y="146" class="n600" font-size="21" fill="#788A7E">A small idea, ready for the world.</text>
-    </g>
-  </g>
-`;
+  ${appHeader('1,420', '2/3', 1)}
+  <g transform="translate(0, 98)">
+    <!-- Active Focus Card -->
+    <rect x="0" y="0" width="780" height="340" rx="36" fill="#EEF3E7"/>
+    <text x="34" y="48" class="n800" font-size="16" fill="#788A7E" letter-spacing="2">A LITTLE FOCUS</text>
+    <text x="34" y="92" class="f500" font-size="36" fill="#354F47">Train a cozy chatbot</text>
+    <rect x="34" y="122" width="712" height="18" rx="9" fill="#DCE5D5"/>
+    <rect x="34" y="122" width="490" height="18" rx="9" fill="#83A68B"/>
+    <text x="34" y="176" class="n600" font-size="21" fill="#788A7E">Keeps going while you’re away.</text>
+    <text x="746" y="176" text-anchor="end" class="n800" font-size="24" fill="#354F47">03:12</text>
+    <rect x="34" y="206" width="712" height="74" rx="24" fill="#E5EEDC"/>
+    <text x="390" y="252" text-anchor="middle" class="n800" font-size="24" fill="#426E5C">Boost · 1 energy</text>
+    <text x="390" y="314" text-anchor="middle" class="n600" font-size="18" fill="#788A7E">Remove 25% of the time left · once per project</text>
 
-// Screenshot 3: Upgrades Shop & Studio Moods
-const shot3Screen = `
-  <g transform="translate(0, 4)">
-    <text x="0" y="48" class="f600" font-size="46" fill="#354F47">Little upgrades</text>
-    <text x="0" y="84" class="n600" font-size="22" fill="#788A7E">Good things for your little corner.</text>
-    <rect x="708" y="10" width="72" height="72" rx="24" fill="#E9EFDF"/>
-    <text x="744" y="56" text-anchor="middle" class="n800" font-size="28" fill="#354F47">✕</text>
-
-    <rect x="0" y="110" width="780" height="78" rx="26" fill="#F7EDCE"/>
-    <text x="28" y="157" class="n600" font-size="22" fill="#A47A2A">Your coin jar</text>
-    <text x="752" y="159" text-anchor="end" class="f600" font-size="34" fill="#354F47">520 coins</text>
-
-    <!-- Room Moods -->
-    <text x="0" y="238" class="f500" font-size="34" fill="#354F47">Room decor &amp; moods</text>
-    <g transform="translate(0, 260)">
-      <rect x="0" y="0" width="246" height="148" rx="28" fill="#E5EEDC" stroke="#6E9078" stroke-width="3"/>
-      <text x="123" y="54" text-anchor="middle" class="n800" font-size="34" fill="#426E5C">☀</text>
-      <text x="123" y="96" text-anchor="middle" class="n800" font-size="21" fill="#354F47">Sunny studio</text>
-      <text x="123" y="124" text-anchor="middle" class="n600" font-size="18" fill="#788A7E">Your mood</text>
-
-      <rect x="267" y="0" width="246" height="148" rx="28" fill="#FFFFFF" stroke="#E1E7DA" stroke-width="2"/>
-      <text x="390" y="54" text-anchor="middle" class="n800" font-size="34" fill="#788A7E">☂</text>
-      <text x="390" y="96" text-anchor="middle" class="n800" font-size="21" fill="#354F47">Rainy day</text>
-      <text x="390" y="124" text-anchor="middle" class="n600" font-size="18" fill="#788A7E">Free</text>
-
-      <rect x="534" y="0" width="246" height="148" rx="28" fill="#FFFFFF" stroke="#E1E7DA" stroke-width="2"/>
-      <text x="657" y="54" text-anchor="middle" class="n800" font-size="34" fill="#788A7E">☾</text>
-      <text x="657" y="96" text-anchor="middle" class="n800" font-size="21" fill="#354F47">Moonlit nook</text>
-      <text x="657" y="124" text-anchor="middle" class="n600" font-size="18" fill="#788A7E">Free</text>
+    <!-- Rank & Streak Strip -->
+    <g transform="translate(0, 364)">
+      <rect x="0" y="0" width="380" height="68" rx="24" fill="#FFFFFF" stroke="#E6EBDE" stroke-width="2"/>
+      <text x="190" y="42" text-anchor="middle" class="n800" font-size="22" fill="#354F47">Cozy Crafter</text>
+      <rect x="400" y="0" width="380" height="68" rx="24" fill="#FDF4DC" stroke="#EAD5A5" stroke-width="2"/>
+      <text x="590" y="42" text-anchor="middle" class="n800" font-size="22" fill="#A47A2A">5-day coding streak</text>
     </g>
 
-    <!-- Adoptable Desk Cat Card -->
-    <g transform="translate(0, 434)">
-      <rect x="0" y="0" width="780" height="176" rx="34" fill="#F8EADC" stroke="#EED9C5" stroke-width="2"/>
-      <rect x="28" y="28" width="78" height="78" rx="26" fill="#F1D6BA"/>
-      <path d="M49 74 L48 56 Q50 53 56 61 Q67 57 78 61 L86 54 L85 74 Q84 85 67 85 Q50 85 49 74Z" fill="#EFBA88" stroke="#4D5C55" stroke-width="2.5" stroke-linejoin="round"/>
-      <path d="M58 70 Q60 72 62 70 M72 70 Q74 72 76 70" fill="none" stroke="#4D5C55" stroke-width="2" stroke-linecap="round"/>
-      <text x="128" y="60" class="n800" font-size="26" fill="#354F47">Desk cat</text>
-      <text x="128" y="94" class="n600" font-size="21" fill="#788A7E">A sleepy ginger friend for your coffee breaks.</text>
-      <text x="28" y="148" class="n800" font-size="21" fill="#426E5C">♥ Part of the family</text>
-    </g>
-
-    <!-- Warm Desk Lamp Card -->
-    <g transform="translate(0, 634)">
-      <rect x="0" y="0" width="780" height="226" rx="34" fill="#FFFFFF" stroke="#E6EBDD" stroke-width="2"/>
-      <rect x="28" y="28" width="78" height="78" rx="26" fill="#F7E5D4"/>
-      <path d="M56 84 H78 M67 84 V66 L61 56" stroke="#4D5C55" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      <path d="M51 58 Q61 46 71 58Z" fill="#F6C376" stroke="#4D5C55" stroke-width="2.5" stroke-linejoin="round"/>
-      <text x="128" y="60" class="n800" font-size="26" fill="#354F47">Warm desk lamp</text>
-      <text x="128" y="94" class="n600" font-size="21" fill="#788A7E">A soft amber glow for late hours</text>
-      <rect x="28" y="126" width="144" height="36" rx="18" fill="#E6EEDC"/>
-      <text x="100" y="150" text-anchor="middle" class="n800" font-size="17" fill="#426E5C">In your room</text>
-      <rect x="28" y="172" width="724" height="38" rx="19" fill="#E5EEDC"/>
-      <text x="390" y="198" text-anchor="middle" class="n800" font-size="19" fill="#426E5C">Tuck away or place anytime</text>
-    </g>
-
-    <!-- Studio Milestones Card -->
-    <text x="0" y="914" class="f500" font-size="34" fill="#354F47">Studio milestones</text>
-    <g transform="translate(0, 936)">
-      <rect x="0" y="0" width="780" height="218" rx="34" fill="#FFFFFF" stroke="#D8BE82" stroke-width="2.5"/>
-      <rect x="28" y="28" width="72" height="72" rx="22" fill="#F7EDCE"/>
-      <circle cx="64" cy="58" r="12" fill="none" stroke="#A47A2A" stroke-width="2.8"/>
-      <path d="M58 68 L55 82 L64 77 L73 82 L70 68" fill="none" stroke="#A47A2A" stroke-width="2.5" stroke-linejoin="round"/>
-      <text x="122" y="58" class="n800" font-size="25" fill="#354F47">Warm company</text>
-      <text x="122" y="90" class="n600" font-size="21" fill="#788A7E">Adopt the desk cat</text>
-      <text x="752" y="72" text-anchor="end" class="n800" font-size="24" fill="#A47A2A">+75 coins</text>
-      <rect x="28" y="122" width="724" height="72" rx="24" fill="#426E5C"/>
-      <text x="390" y="167" text-anchor="middle" class="n800" font-size="24" fill="#FFFDF4">Claim 75 coins</text>
-    </g>
-  </g>
-`;
-
-// Screenshot 4: Rainy Day Studio & Project Catalog
-const shot4Screen = `
-  ${appHeader('195', '3/3')}
-  <g transform="translate(0, 88)">
-    <svg x="0" y="0" width="780" height="690" viewBox="0 0 400 354">
-      ${roomSvg({ atmosphere: 'rainy', catOwned: true, lamp: true, plant: true, rug: true, poster: false, keyboard: true, monitor: false, working: false })}
-    </svg>
-    <g transform="translate(8, 718)">
-      <circle cx="8" cy="-7" r="5" fill="#789B78"/>
-      <text x="24" y="0" class="n600" font-size="22" fill="#354F47">Home sweet studio</text>
-      <text x="764" y="0" text-anchor="end" class="n600" font-size="22" fill="#788A7E">4 shipped</text>
-    </g>
-
-    <g transform="translate(0, 756)">
-      <text x="0" y="34" class="f500" font-size="34" fill="#354F47">One small thing at a time</text>
-      <text x="780" y="32" text-anchor="end" class="n600" font-size="21" fill="#788A7E">1.25× earnings</text>
+    <!-- Project Cards -->
+    <g transform="translate(0, 464)">
+      <text x="0" y="32" class="f500" font-size="34" fill="#354F47">One small thing at a time</text>
+      <text x="780" y="30" text-anchor="end" class="n600" font-size="21" fill="#788A7E">2.75× earnings</text>
 
       <!-- Card 1 -->
-      <g transform="translate(0, 58)">
-        <rect x="0" y="0" width="780" height="220" rx="34" fill="#FFFFFF" stroke="#E9EEE2" stroke-width="2"/>
-        <rect x="26" y="24" width="74" height="74" rx="24" fill="#EBEFDD"/>
-        <text x="63" y="71" text-anchor="middle" class="n800" font-size="30" fill="#354F47">&gt;_</text>
-        <text x="122" y="54" class="n800" font-size="25" fill="#354F47">Hello, world</text>
-        <text x="122" y="88" class="n600" font-size="20" fill="#788A7E">15 sec · 25 coins</text>
-        <text x="26" y="132" class="n600" font-size="20" fill="#788A7E">One tiny program. One big beginning.</text>
-        <rect x="26" y="150" width="728" height="52" rx="18" fill="#E5EEDC"/>
-        <text x="390" y="184" text-anchor="middle" class="n800" font-size="21" fill="#426E5C">Start project →</text>
+      <g transform="translate(0, 56)">
+        <rect x="0" y="0" width="780" height="202" rx="34" fill="#FFFFFF" stroke="#E9EEE2" stroke-width="2"/>
+        <rect x="26" y="24" width="72" height="72" rx="24" fill="#EBEFDD"/>
+        <text x="62" y="70" text-anchor="middle" class="n800" font-size="28" fill="#354F47">♫</text>
+        <text x="120" y="54" class="n800" font-size="25" fill="#354F47">Lo-fi beat script</text>
+        <text x="120" y="88" class="n600" font-size="20" fill="#788A7E">2 min · 426 coins</text>
+        <text x="26" y="132" class="n600" font-size="20" fill="#788A7E">Code a chill rain-and-piano loop for late focus.</text>
+        <rect x="26" y="148" width="728" height="38" rx="16" fill="#E5EEDC"/>
+        <text x="390" y="174" text-anchor="middle" class="n800" font-size="19" fill="#426E5C">Start project →</text>
       </g>
 
       <!-- Card 2 -->
-      <g transform="translate(0, 296)">
-        <rect x="0" y="0" width="780" height="220" rx="34" fill="#FFFFFF" stroke="#E9EEE2" stroke-width="2"/>
-        <rect x="26" y="24" width="74" height="74" rx="24" fill="#EBEFDD"/>
-        <text x="63" y="71" text-anchor="middle" class="n800" font-size="30" fill="#354F47">{}</text>
-        <text x="122" y="54" class="n800" font-size="25" fill="#354F47">Squash a bug</text>
-        <text x="122" y="88" class="n600" font-size="20" fill="#788A7E">1 min · 88 coins</text>
-        <text x="26" y="132" class="n600" font-size="20" fill="#788A7E">It was a missing semicolon. Probably.</text>
-        <rect x="26" y="150" width="728" height="52" rx="18" fill="#E5EEDC"/>
-        <text x="390" y="184" text-anchor="middle" class="n800" font-size="21" fill="#426E5C">Start project →</text>
+      <g transform="translate(0, 276)">
+        <rect x="0" y="0" width="780" height="202" rx="34" fill="#FFFFFF" stroke="#E9EEE2" stroke-width="2"/>
+        <rect x="26" y="24" width="72" height="72" rx="24" fill="#EBEFDD"/>
+        <text x="62" y="70" text-anchor="middle" class="n800" font-size="26" fill="#354F47">&lt;/&gt;</text>
+        <text x="120" y="54" class="n800" font-size="25" fill="#354F47">Launch a pocket app</text>
+        <text x="120" y="88" class="n600" font-size="20" fill="#788A7E">20 min · 4,812 coins</text>
+        <text x="26" y="132" class="n600" font-size="20" fill="#788A7E">Smooth buttons, zero clutter, built with love.</text>
+        <rect x="26" y="148" width="728" height="38" rx="16" fill="#E5EEDC"/>
+        <text x="390" y="174" text-anchor="middle" class="n800" font-size="19" fill="#426E5C">Start project →</text>
+      </g>
+
+      <!-- Card 3 -->
+      <g transform="translate(0, 496)">
+        <rect x="0" y="0" width="780" height="156" rx="34" fill="#FFFFFF" stroke="#E9EEE2" stroke-width="2"/>
+        <rect x="26" y="24" width="72" height="72" rx="24" fill="#EBEFDD"/>
+        <text x="62" y="70" text-anchor="middle" class="n800" font-size="26" fill="#354F47">CPU</text>
+        <text x="120" y="54" class="n800" font-size="25" fill="#354F47">Write a tiny OS</text>
+        <text x="120" y="88" class="n600" font-size="20" fill="#788A7E">60 min · 16,500 coins</text>
+        <text x="26" y="132" class="n600" font-size="20" fill="#788A7E">Bootloader, kernel, and a blinking cursor from scratch.</text>
       </g>
     </g>
   </g>
+  ${bottomTabBar('projects')}
+`;
+
+// Screenshot 3: Full-Screen Mascot Picker & Cozy Upgrades
+const shot3Screen = `
+  <g transform="translate(0, 4)">
+    <text x="0" y="46" class="n800" font-size="18" fill="#426E5C" letter-spacing="2">CHOOSE YOUR DEVELOPER</text>
+    <text x="0" y="102" class="f600" font-size="52" fill="#354F47">Pick your studio mascot.</text>
+    <text x="0" y="142" class="n600" font-size="23" fill="#788A7E">Switch mascots anytime &amp; personalize your terminal.</text>
+
+    <!-- 2x2 Mascot Grid -->
+    ${mascotCardSvg(0, 174, 376, 'Leo', 'Sage Curls', 'Male', '#E4EFE4', '#91B5A0', '#4B403A', '#C98E6B', 'curly', true)}
+    ${mascotCardSvg(404, 174, 376, 'Maya', 'Amber Bun', 'Female', '#F8EAE1', '#E7A98F', '#382B24', '#D69E7B', 'straight', false)}
+    ${mascotCardSvg(0, 444, 376, 'Kai', 'Denim Cap', 'Male', '#E4ECF3', '#7C93A8', '#2B2523', '#B97E5C', 'cap', false)}
+    ${mascotCardSvg(404, 444, 376, 'Zoe', 'Cozy Bob', 'Female', '#EFEAF7', '#A999C6', '#6B4232', '#E2B494', 'bob', false)}
+
+    <!-- Upgrades & Desk Cat Preview -->
+    <text x="0" y="756" class="f500" font-size="34" fill="#354F47">Studio upgrades &amp; companions</text>
+
+    <g transform="translate(0, 782)">
+      <rect x="0" y="0" width="780" height="148" rx="32" fill="#F8EADC" stroke="#EED9C5" stroke-width="2"/>
+      <rect x="24" y="28" width="90" height="90" rx="28" fill="#F1D6BA"/>
+      <path d="M51 82 L50 64 Q52 61 58 69 Q69 65 80 69 L88 62 L87 82 Q86 93 69 93 Q52 93 51 82Z" fill="#EFBA88" stroke="#4D5C55" stroke-width="2.5" stroke-linejoin="round"/>
+      <text x="136" y="64" class="n800" font-size="26" fill="#354F47">Desk cat</text>
+      <text x="136" y="96" class="n600" font-size="21" fill="#788A7E">Adopt a sleepy friend — tap to pet anytime!</text>
+      <rect x="616" y="50" width="138" height="46" rx="20" fill="#E6EEDC"/>
+      <text x="685" y="80" text-anchor="middle" class="n800" font-size="18" fill="#426E5C">Adopted</text>
+    </g>
+
+    <g transform="translate(0, 952)">
+      <rect x="0" y="0" width="376" height="146" rx="30" fill="#FFFFFF" stroke="#E6EBDD" stroke-width="2"/>
+      <text x="28" y="54" class="n800" font-size="24" fill="#354F47">Espresso maker</text>
+      <text x="28" y="88" class="n600" font-size="19" fill="#788A7E">+65% project earnings</text>
+      <rect x="28" y="102" width="122" height="28" rx="14" fill="#E6EEDC"/>
+      <text x="89" y="121" text-anchor="middle" class="n800" font-size="14" fill="#426E5C">Equipped</text>
+
+      <rect x="404" y="0" width="376" height="146" rx="30" fill="#FFFFFF" stroke="#E6EBDD" stroke-width="2"/>
+      <text x="432" y="54" class="n800" font-size="24" fill="#354F47">Fairy lights</text>
+      <text x="432" y="88" class="n600" font-size="19" fill="#788A7E">Warm bulbs on your wall</text>
+      <rect x="432" y="102" width="136" height="28" rx="14" fill="#E6EEDC"/>
+      <text x="500" y="121" text-anchor="middle" class="n800" font-size="14" fill="#426E5C">In your room</text>
+    </g>
+
+    <rect x="0" y="1130" width="780" height="82" rx="26" fill="#426E5C"/>
+    <text x="390" y="1181" text-anchor="middle" class="n800" font-size="26" fill="#FFFDF4">Enter my studio →</text>
+  </g>
+`;
+
+// Screenshot 4: Moonlit Celebration Full-Screen Studio
+const shot4Screen = `
+  ${appHeader('2,340', '3/3', 3)}
+  <g transform="translate(0, 96)">
+    <g clip-path="url(#studioClip)">
+      <rect x="0" y="0" width="780" height="1116" fill="#C8D1DB"/>
+      <rect x="0" y="760" width="780" height="356" fill="#B6A89F"/>
+      <line x1="0" y1="760" x2="780" y2="760" stroke="#9B897F" stroke-width="4"/>
+      <svg x="-30" y="210" width="840" height="743" viewBox="0 0 400 354">
+        ${roomSvg({ atmosphere: 'moonlit', catOwned: true, lamp: true, plant: true, rug: true, poster: true, lights: true, espresso: true, headphones: true, keyboard: true, monitor: true, working: false, celebrating: true, screenMode: 'studio' })}
+      </svg>
+    </g>
+    <rect x="0" y="0" width="780" height="1116" rx="46" fill="none" stroke="#BFC9D4" stroke-width="3"/>
+
+    <!-- Collapsed Console Pill -->
+    <g transform="translate(26, 26)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="268" height="52" rx="22" fill="#263833EE" stroke="#3D544C" stroke-width="1.5"/>
+      <circle cx="24" cy="26" r="5" fill="#E37A6F"/>
+      <circle cx="38" cy="26" r="5" fill="#E4BF64"/>
+      <circle cx="52" cy="26" r="5" fill="#6FA882"/>
+      <text x="72" y="32" class="n800" font-size="17" fill="#D4E6DC">elorm · ready!</text>
+    </g>
+
+    <!-- Gold Ready-to-Ship Pill -->
+    <g transform="translate(154, 1022)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="472" height="68" rx="34" fill="#FDF7E7" stroke="#E5CFA0" stroke-width="2.5"/>
+      <circle cx="36" cy="34" r="8" fill="#A47A2A"/>
+      <text x="60" y="42" class="n800" font-size="21" fill="#A47A2A">Ready to ship! (+850 coins)</text>
+    </g>
+  </g>
+  ${bottomTabBar('studio')}
 `;
 
 const shot1Svg = phoneFrame({
-  pill: 'COZY CODING STUDIO',
-  headline: 'Code at your own gentle pace',
-  subhead: 'Start a project, sip a coffee boost, and let your little dev work',
+  pill: 'REMEMBER CODING BY HAND',
+  headline: 'Your quiet coding studio',
+  subhead: 'Watch live terminal logs, code editor screens, and your desk cat',
   screenContent: shot1Screen,
 });
 
 const shot2Svg = phoneFrame({
-  pill: 'OFFLINE PROGRESS',
-  headline: 'Come back to small wins',
-  subhead: 'Projects finish while you are away — collect coins &amp; celebrate',
+  pill: '8 HANDCRAFTED PROJECTS',
+  headline: 'Build one small thing',
+  subhead: 'From lo-fi beat scripts to a tiny OS — progress continues offline',
   bgAccent: '#D8E2EC',
   screenContent: shot2Screen,
 });
 
 const shot3Svg = phoneFrame({
-  pill: 'UPGRADES &amp; COMPANION',
+  pill: 'MASCOTS &amp; UPGRADES',
   headline: 'Make the studio yours',
-  subhead: 'Adopt a sleepy desk cat, unlock desk gear, and claim milestones',
+  subhead: 'Choose from 4 mascots, adopt a desk cat, and unlock cozy gear',
   bgAccent: '#F7E4D1',
   screenContent: shot3Screen,
 });
 
 const shot4Svg = phoneFrame({
   pill: 'SUNNY, RAINY OR MOONLIT',
-  headline: 'Made for slow days',
-  subhead: 'Free studio moods, zero ads, saved safely on your phone',
+  headline: 'Late nights &amp; small wins',
+  subhead: 'Glowing fairy lights, warm desk lamp, zero ads, 100% offline',
   bgAccent: '#D7E4E2',
   screenContent: shot4Screen,
 });
@@ -517,52 +650,4 @@ for (const [name, svg] of shots) {
   await sharp(Buffer.from(svg)).resize(1080, 1920).png().toFile(join(OUT, name));
 }
 
-// 4. Ready-to-paste Google Play Store Listing Copy
-const listingMd = `# Nib — Google Play Store Listing Assets & Copy
-
-All required image assets are generated in this folder (\`store-assets/\`) at Google Play's exact pixel specifications:
-
-| Asset | File | Dimensions |
-| --- | --- | --- |
-| **App Icon** | \`play-store-icon-512x512.png\` | \`512 × 512 px\` (32-bit PNG) |
-| **Feature Graphic** | \`feature-graphic-1024x500.png\` | \`1024 × 500 px\` (PNG) |
-| **Phone Screenshot 1** | \`phone-screenshot-1-studio-1080x1920.png\` | \`1080 × 1920 px\` (9:16 PNG) |
-| **Phone Screenshot 2** | \`phone-screenshot-2-ship-1080x1920.png\` | \`1080 × 1920 px\` (9:16 PNG) |
-| **Phone Screenshot 3** | \`phone-screenshot-3-upgrades-1080x1920.png\` | \`1080 × 1920 px\` (9:16 PNG) |
-| **Phone Screenshot 4** | \`phone-screenshot-4-moods-1080x1920.png\` | \`1080 × 1920 px\` (9:16 PNG) |
-
-*(Tip: Google Play also allows uploading these same 1080×1920 screenshots into the 7-inch and 10-inch tablet screenshot slots if required by the console form.)*
-
----
-
-## Ready-to-Paste Store Listing Text
-
-- **App name** *(max 30 chars)*:
-  \`Nib\` (or \`Nib: Cozy Coding Studio\`)
-- **Short description** *(max 80 chars)*:
-  \`A cozy offline idle game. Code small projects, adopt a desk cat & decorate.\`
-- **Full description** *(max 4000 chars)*:
-  \`\`\`text
-  Settle into a quiet little studio and build one small project at a time.
-
-  Nib is a gentle, offline-first idle game about a tiny developer and a cozy room. Pick a coding project—from a 15-second "Hello, world" to shipping an indie game—let your developer type away while you take a break, and come back to collect your coins.
-
-  FEATURES
-  • Cozy Timed Projects: Progress continues while you’re away using your device clock.
-  • Adopt a Desk Cat: Save up earned coins to adopt a sleepy ginger friend who naps beside your coffee mug.
-  • Upgrade Your Setup: Equip a clicky keyboard and dream monitor to boost your project earnings.
-  • Decorate & Pick Your Mood: Add a leafy windowsill plant, warm desk lamp, peachy rug, and moon print, and switch freely between Sunny, Rainy, and Moonlit atmospheres.
-  • Coffee Energy Boosts: Energy refills automatically every 30 minutes—spend a cup to trim 25% off a running project’s remaining time.
-  • Studio Milestones: Claim bonus coin jars as your studio grows.
-  • 100% Offline & Private: No accounts, no internet required, no ads, and no in-app purchases.
-  \`\`\`
-
-## Google Play App Content Declarations (Quick Guide)
-- **Ads**: No, my app does not contain ads.
-- **App Access**: All functionality is available without special access (no login).
-- **Data Safety**: No user data is collected or shared (all saves remain locally on the device).
-- **Target Audience**: 13+ / General audience (Simulation / Casual Game).
-`;
-
-writeFileSync(join(OUT, 'README.md'), listingMd);
-console.log('Generated Play Store assets in store-assets/');
+console.log('Generated updated Play Store assets in store-assets/');

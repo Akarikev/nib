@@ -15,6 +15,10 @@ import { Shop } from './src/components/shop';
 import { PrivacyPolicy } from './src/components/privacy';
 import { Onboarding } from './src/components/onboarding';
 import { SettingsContent } from './src/components/settings';
+import { AlertConfig, CustomAlert } from './src/components/alert';
+import { TerminalOverlay } from './src/components/terminal';
+import { OtaUpdateSheet, StoreUpdateScreen } from './src/components/update-prompts';
+import { LATEST_RELEASE, WhatsNewModal } from './src/components/whats-new';
 import { useAppUpdates } from './src/utils/updates';
 import { APP_NAME } from './src/config';
 import {
@@ -25,10 +29,14 @@ import {
  claim,
  claimMilestone,
  completeOnboarding,
+ CURRENT_ONBOARDING_VERSION,
+ developerRank,
+ DeveloperStyle,
  energyStatus,
  ENERGY_CAP,
  freshSave,
  ITEMS,
+ markReleaseSeen,
  MILESTONES,
  MilestoneId,
  multiplier,
@@ -37,12 +45,29 @@ import {
  PROJECTS,
  Save,
  setAtmosphere,
+ setDeveloperStyle,
+ setPlayerName,
  startProject,
  toggleDecoration,
 } from './src/game/game';
 
 const KEY = 'pocket-dev.save.v1'; // Keep the original key so existing rooms survive updates.
-const projectIcons: Record<string, IconName> = { hello: 'terminal', bug: 'bug', site: 'code', game: 'game' };
+const projectIcons: Record<string, IconName> = {
+ hello: 'terminal',
+ bug: 'bug',
+ playlist: 'music',
+ site: 'code',
+ bot: 'bot',
+ app: 'smartphone',
+ game: 'game',
+ os: 'cpu',
+};
+const CAT_PURRS = [
+ 'Purrr… your desk cat curls up closer to your keyboard.',
+ 'Mrrp! A gentle headbutt against your warm coffee mug.',
+ 'Your desk cat slowly blinks at you. Pure cozy trust.',
+ 'Tiny paws knead the desk mat while you code.',
+];
 type Tab = 'studio' | 'actions' | 'settings';
 
 function Game() {
@@ -56,6 +81,9 @@ function Game() {
  const [tab, setTab] = useState<Tab>('studio');
  const [shop, setShop] = useState(false);
  const [onboarding, setOnboarding] = useState(false);
+ const [whatsNew, setWhatsNew] = useState(false);
+ const [isReturningUpdate, setIsReturningUpdate] = useState(false);
+ const [alertConfig, setAlertConfig] = useState<AlertConfig | null>(null);
  const [showPrivacy, setShowPrivacy] = useState(() => {
   if (typeof window !== 'undefined' && window.location) {
    return (
@@ -77,7 +105,7 @@ function Game() {
   setNotice({ id: ++noticeId.current, text, error, icon });
  }, []);
 
- const updates = useAppUpdates(msg => notify(msg));
+ const updates = useAppUpdates(notify);
 
  async function load() {
   setLoadError(false);
@@ -86,8 +114,15 @@ function Game() {
    const next = raw ? parseSave(raw) : freshSave();
    saveRef.current = next;
    setSave(next);
-   // Show onboarding automatically for brand-new players
-   if (!raw && !next.onboarded && next.completed === 0 && next.coins === 0 && !next.active) {
+   // Show full-screen onboarding automatically for brand-new players
+   if (!raw) {
+    setIsReturningUpdate(false);
+    setOnboarding(true);
+   } else if (next.lastSeenRelease !== LATEST_RELEASE.id) {
+    // Existing player who just updated: show the data-driven What's New popup (from src/changelog.json)
+    setWhatsNew(true);
+   } else if ((next.onboardingVersion ?? 0) < CURRENT_ONBOARDING_VERSION) {
+    setIsReturningUpdate(true);
     setOnboarding(true);
    }
   } catch {
@@ -247,50 +282,86 @@ function Game() {
       </Pressable>
      </View>
     </View>
-
-    {/* OTA / Store Update Available Banner */}
-    {updates.bannerVisible && (
-     <View style={s.updateBanner}>
-      <Icon name="download" size={16} color={C.gold} />
-      <Label style={{ flex: 1, fontSize: 12, color: C.ink, fontFamily: 'Nunito_800ExtraBold' }}>
-       {updates.kind === 'ota-ready'
-        ? 'New studio update ready!'
-        : `New version ${updates.latestVersion} available!`}
-      </Label>
-      <Pressable
-       accessibilityRole="button"
-       onPress={updates.applyUpdate}
-       style={({ pressed }) => [s.updateActionBtn, { opacity: pressed ? 0.75 : 1 }]}
-      >
-       <Label style={{ fontSize: 11, fontFamily: 'Nunito_800ExtraBold', color: '#FFFDF4' }}>
-        {updates.kind === 'ota-ready' ? 'Reload' : 'Update'}
-       </Label>
-      </Pressable>
-      <Pressable
-       accessibilityRole="button"
-       accessibilityLabel="Dismiss update notice"
-       onPress={updates.dismissBanner}
-       style={{ padding: 4 }}
-      >
-       <Icon name="close" size={15} color={C.muted} />
-      </Pressable>
-     </View>
-    )}
    </View>
 
    {/* Main Tab View */}
    {tab === 'studio' ? (
-    /* Tab 1: Full-Screen Studio View — the animated studio fills the entire screen edge-to-edge */
-    <View style={{ flex: 1, width: '100%' }}>
-     <Room
-      fullScreen
-      working={!!active && !ready}
-      celebrating={ready || now < celebrateUntil}
-      catOwned={!!save.catOwned}
-      owned={save.owned}
-      decorated={save.decorated}
-      atmosphere={save.atmosphere ?? 'sunny'}
-     />
+    /* Tab 1: Full-Screen Studio View with rounded frame and ambient status pill */
+    <View style={s.studioFrame}>
+     <View style={s.studioCanvasCard}>
+      <Room
+       fullScreen
+       working={!!active && !ready}
+       celebrating={ready || now < celebrateUntil}
+       catOwned={!!save.catOwned}
+       owned={save.owned}
+       decorated={save.decorated}
+       atmosphere={save.atmosphere ?? 'sunny'}
+       developerStyle={save.developerStyle ?? 'curly'}
+       onPetCat={() => {
+        const msg = CAT_PURRS[Math.floor(Math.random() * CAT_PURRS.length)]!;
+        notify(msg);
+       }}
+      />
+
+      {/* Simulated Dev Terminal Overlay */}
+      <TerminalOverlay
+       projectId={active?.projectId}
+       working={!!active && !ready}
+       ready={ready}
+       progress={p}
+       playerName={save.playerName}
+       rank={developerRank(save.completed)}
+       streak={save.streak?.count ?? 0}
+       completed={save.completed}
+       onOpenProjects={() => setTab('actions')}
+      />
+
+      {/* Floating Status Pill over the Studio */}
+      <Pressable
+       accessibilityRole="button"
+       accessibilityLabel={
+        ready
+         ? `${current?.name ?? 'Project'} is ready to ship, tap to collect coins`
+         : active
+         ? `Currently working on ${current?.name}, ${time} remaining`
+         : 'Studio resting, tap to pick a project'
+       }
+       onPress={() => {
+        if (ready) {
+         act(s => claim(s, Date.now()), `Shipped! ${active!.reward} coins in your jar.`, 'coin');
+        } else {
+         setTab('actions');
+        }
+       }}
+       style={({ pressed }) => [
+        s.studioStatusPill,
+        ready && { backgroundColor: '#FDF7E7', borderColor: '#E5CFA0' },
+        { opacity: pressed ? 0.85 : 1 },
+       ]}
+      >
+       <View
+        style={[
+         s.statusDot,
+         { backgroundColor: ready ? C.gold : active ? '#5C946E' : '#9EB0A5' },
+        ]}
+       />
+       <View style={{ flexShrink: 1 }}>
+        <Label style={[s.statusPillTitle, ready && { color: C.gold }]}>
+         {ready
+          ? `Ready to ship! (+${active?.reward} coins)`
+          : active
+          ? `Coding ${current?.name} · ${time}`
+          : 'Resting · Tap to code'}
+        </Label>
+       </View>
+       <Icon
+        name={ready ? 'coin' : active ? 'terminal' : 'arrow'}
+        size={15}
+        color={ready ? C.gold : active ? C.green : C.muted}
+       />
+      </Pressable>
+     </View>
     </View>
    ) : tab === 'actions' ? (
     /* Tab 2: Projects & Actions View */
@@ -408,6 +479,28 @@ function Game() {
        <Icon name="arrow" size={19} color={C.green} />
       </Pressable>
 
+      {/* Developer Rank & Daily Streak Bar */}
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+       <View style={s.rankPill}>
+        <Icon name="trophy" size={14} color={C.green} />
+        <Label style={{ fontSize: 12, fontFamily: 'Nunito_800ExtraBold', color: C.ink }}>
+         {developerRank(save.completed)}
+        </Label>
+       </View>
+       <View style={[s.rankPill, (save.streak?.count ?? 0) > 0 && { backgroundColor: '#FDF4DC', borderColor: '#EAD5A5' }]}>
+        <Icon name="flame" size={14} color={(save.streak?.count ?? 0) > 0 ? C.gold : C.muted} />
+        <Label
+         style={{
+          fontSize: 12,
+          fontFamily: 'Nunito_800ExtraBold',
+          color: (save.streak?.count ?? 0) > 0 ? C.gold : C.muted,
+         }}
+        >
+         {(save.streak?.count ?? 0) > 0 ? `${save.streak!.count}-day streak` : 'Start a streak'}
+        </Label>
+       </View>
+      </View>
+
       <View style={{ gap: 12 }}>
        <View style={s.row}>
         <Label style={s.subtitle}>One small thing at a time</Label>
@@ -460,10 +553,46 @@ function Game() {
      save={save}
      busy={busy}
      onAtmosphere={onAtmosphere}
-     onReplayOnboarding={() => setOnboarding(true)}
+     onDeveloperStyle={(style: DeveloperStyle) => {
+      act(s => setDeveloperStyle(s, style), 'Mascot updated! Looking great.');
+     }}
+     onPlayerName={(name: string) => {
+      act(
+       s => setPlayerName(s, name),
+       name.trim() ? `Terminal updated for ${name.trim()}!` : 'Nickname cleared.'
+      );
+     }}
+     onReplayOnboarding={() => {
+      setIsReturningUpdate(false);
+      setOnboarding(true);
+     }}
+     onOpenWhatsNew={() => setWhatsNew(true)}
      onOpenPrivacy={() => {
       if (typeof window !== 'undefined' && window.history) window.history.pushState({}, '', '/privacy');
       setShowPrivacy(true);
+     }}
+     onResetData={() => {
+      setAlertConfig({
+       title: 'Clear studio data?',
+       message: 'All your coins, upgrades, milestones and projects will be permanently reset to start fresh.',
+       icon: 'alert',
+       iconColor: '#B65147',
+       options: [
+        {
+         text: 'Cancel',
+         style: 'cancel',
+        },
+        {
+         text: 'Reset data',
+         style: 'danger',
+         onPress: () => {
+          act(() => freshSave(), 'Studio reset. Welcome to a fresh start!');
+          setOnboarding(true);
+          setTab('studio');
+         },
+        },
+       ],
+      });
      }}
      updates={updates}
     />
@@ -527,11 +656,54 @@ function Game() {
 
    <Onboarding
     open={onboarding}
-    onComplete={() => {
+    initialName={save.playerName ?? ''}
+    initialStyle={save.developerStyle ?? 'curly'}
+    isReturningUpdate={isReturningUpdate}
+    onComplete={({ name, style }) => {
      setOnboarding(false);
-     act(completeOnboarding, 'Welcome to your studio!');
+     setIsReturningUpdate(false);
+     act(
+      s => completeOnboarding(s, { name, style, releaseId: LATEST_RELEASE.id }),
+      name ? `Welcome to your studio, ${name}!` : 'Welcome to your studio!'
+     );
     }}
    />
+
+   <WhatsNewModal
+    open={whatsNew}
+    primaryLabel={
+     (save.onboardingVersion ?? 0) < CURRENT_ONBOARDING_VERSION
+      ? 'Personalize my studio'
+      : 'Awesome, let’s code!'
+    }
+    secondaryLabel={
+     (save.onboardingVersion ?? 0) < CURRENT_ONBOARDING_VERSION ? 'Skip for now' : undefined
+    }
+    onSecondary={() => {
+     setWhatsNew(false);
+     act(s => completeOnboarding(s, { releaseId: LATEST_RELEASE.id }), '');
+    }}
+    onClose={() => {
+     setWhatsNew(false);
+     if ((save.onboardingVersion ?? 0) < CURRENT_ONBOARDING_VERSION) {
+      act(s => markReleaseSeen(s, LATEST_RELEASE.id), '');
+      setIsReturningUpdate(true);
+      setOnboarding(true);
+     } else {
+      act(s => markReleaseSeen(s, LATEST_RELEASE.id), '');
+     }
+    }}
+   />
+
+   <CustomAlert
+    visible={!!alertConfig}
+    config={alertConfig}
+    onClose={() => setAlertConfig(null)}
+   />
+
+   {/* Dedicated OTA Update Bottom Sheet & Full-Screen Store Update Prompt */}
+   <OtaUpdateSheet updates={updates} />
+   <StoreUpdateScreen updates={updates} />
   </View>
  );
 }
@@ -792,5 +964,71 @@ const s = StyleSheet.create({
   backgroundColor: C.gold,
   borderWidth: 1.5,
   borderColor: '#FFFFFF',
+ },
+ studioFrame: {
+  flex: 1,
+  width: '100%',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingHorizontal: 16,
+  paddingTop: 12,
+  paddingBottom: 10,
+ },
+ studioCanvasCard: {
+  flex: 1,
+  width: '100%',
+  maxWidth: 560,
+  borderRadius: 32,
+  overflow: 'hidden',
+  backgroundColor: '#E2EDE2',
+  borderWidth: 2,
+  borderColor: '#E1E9DA',
+  shadowColor: '#25443B',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.08,
+  shadowRadius: 16,
+  elevation: 4,
+ },
+ studioStatusPill: {
+  position: 'absolute',
+  bottom: 14,
+  alignSelf: 'center',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+  backgroundColor: '#FFFFFFEE',
+  borderWidth: 1,
+  borderColor: '#E0E7D6',
+  paddingHorizontal: 15,
+  paddingVertical: 9,
+  borderRadius: 20,
+  shadowColor: '#203A32',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 10,
+  elevation: 3,
+ },
+ statusDot: {
+  width: 8,
+  height: 8,
+  borderRadius: 4,
+ },
+ statusPillTitle: {
+  fontFamily: 'Nunito_800ExtraBold',
+  fontSize: 12,
+  color: C.ink,
+ },
+ rankPill: {
+  flex: 1,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  backgroundColor: '#FFFFFF',
+  borderWidth: 1,
+  borderColor: '#E6EBDE',
+  borderRadius: 16,
+  paddingVertical: 9,
+  paddingHorizontal: 12,
  },
 });
