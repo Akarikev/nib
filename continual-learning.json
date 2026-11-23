@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-11-22",
+  "updatedAt": "2026-11-23",
   "project": "Nib",
   "goals": [
     "Build a beautiful Android-first offline idle game locally",
@@ -73,10 +73,10 @@
     "Added sticky header with milestone badge, icon-only bottom tab navigation (Studio full-screen edge-to-edge room view, Projects actions view, and Settings view), 3-step animated onboarding flow, OTA + store update checker (expo-updates + version.json), Cozy headphones (+35% earnings), Full studio milestone, and orientation: 'default'"
   ],
   "inProgress": [
-    "v1.1.0 complete (18 tests, 93 assertions): full-screen onboarding with optional nickname & 4 male/female mascots, interactive multi-line terminal, live animated monitor screens, 8 projects, ranks, streaks, fairy lights, espresso maker, tappable desk cat, sectioned Settings, custom Nib alert, OTA bottom sheet, full-screen store update screen, data-driven src/changelog.json What's New modal, and refreshed Play Store graphics/copy. Committing, pushing, and launching EAS Android production AAB build."
+    "v1.1.1 OTA update (21 tests, 135 assertions): 5 moveable homes with live window skylines, 5 dream rides, 4 passive side-project ventures, OLED Ultrawide/Wall Smart TV/Loft Bed/Desk Goldfish, overfill coffee buying (up to 9), Nib Mail (18 random emails), nostalgic dev events, interactive Code Along bug-spotter mini-IDE, fixed 4x7 28-day green contribution heatmap, shareable Studio Card, persistent terminalStore, and fixed chair/seated posture + Kai cap. Publishing EAS OTA update to production branch and pushing nib + nib-site."
   ],
   "verification": {
-    "bun test src/game/game.test.ts": "PASS: 16 tests, 67 assertions including adoption, energy offline refill, cap, rollback, boost, warm desk lamp, cozy headphones, studio milestones, and onboarding persistence",
+    "bun test src/game/game.test.ts": "PASS: 21 tests, 135 assertions",
     "bunx expo export --platform android --platform web": "See bun run export",
     "bun run typecheck": "PASS approved-pose opacity-only typing/idle motion",
     "bunx expo-doctor": "20/21 checks pass; sole failure is remote Expo config schema fetch (ENOTFOUND exp.host)",

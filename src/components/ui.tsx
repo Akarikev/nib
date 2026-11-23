@@ -47,9 +47,23 @@ import { default as CupSoda } from 'lucide-react-native/icons/cup-soda';
 import { default as ArrowLeft } from 'lucide-react-native/icons/arrow-left';
 import { default as ChevronRight } from 'lucide-react-native/icons/chevron-right';
 import { default as User } from 'lucide-react-native/icons/user';
+import { default as Car } from 'lucide-react-native/icons/car';
+import { default as Bike } from 'lucide-react-native/icons/bike';
+import { default as KeyRound } from 'lucide-react-native/icons/key-round';
+import { default as MapPin } from 'lucide-react-native/icons/map-pin';
+import { default as Mountain } from 'lucide-react-native/icons/mountain';
+import { default as Mail } from 'lucide-react-native/icons/mail';
+import { default as MailOpen } from 'lucide-react-native/icons/mail-open';
+import { default as Reply } from 'lucide-react-native/icons/reply';
+import { default as Send } from 'lucide-react-native/icons/send';
+import { default as Zap } from 'lucide-react-native/icons/zap';
+import { default as Tv } from 'lucide-react-native/icons/tv';
+import { default as BedDouble } from 'lucide-react-native/icons/bed-double';
+import { default as Fish } from 'lucide-react-native/icons/fish';
+import { default as TrendingUp } from 'lucide-react-native/icons/trending-up';
 import type { LucideIcon } from 'lucide-react-native';
 export const C = { ink: '#354F47', muted: '#788A7E', bg: '#F8FAF2', green: '#426E5C', mint: '#E5EEDC', peach: '#F4D0B4', gold: '#A47A2A' };
-const icons = { coffee: Coffee, cat: Cat, lamp: LampDesk, award: Award, check: Check, settings: Settings, house: House, tasks: ListTodo, refresh: RefreshCw, download: Download, headphones: Headphones, book: BookOpen, shield: ShieldCheck, music: Music, bot: Bot, smartphone: Smartphone, cpu: Cpu, flame: Flame, lights: Lightbulb, espresso: CupSoda, back: ArrowLeft, chevron: ChevronRight, user: User, arrow: ArrowRight, rug: Armchair, badge: Badge, bug: Bug, coin: CircleDollarSign, clock: Clock3, code: Code2, plant: Leaf, game: Gamepad2, heart: Heart, keyboard: Keyboard, monitor: Monitor, poster: MoonStar, package: Package, palette: Palette, shop: ShoppingBag, brain: Brain, alert: CircleAlert, sun: Sun, terminal: Terminal, trophy: Trophy, close: X, flower: Flower2, rain: CloudRain } satisfies Record<string, LucideIcon>;
+const icons = { coffee: Coffee, cat: Cat, lamp: LampDesk, award: Award, check: Check, settings: Settings, house: House, tasks: ListTodo, refresh: RefreshCw, download: Download, headphones: Headphones, book: BookOpen, shield: ShieldCheck, music: Music, bot: Bot, smartphone: Smartphone, cpu: Cpu, flame: Flame, lights: Lightbulb, espresso: CupSoda, back: ArrowLeft, chevron: ChevronRight, user: User, car: Car, bike: Bike, key: KeyRound, pin: MapPin, mountain: Mountain, mail: Mail, mailOpen: MailOpen, reply: Reply, send: Send, zap: Zap, oled: Monitor, tv: Tv, bed: BedDouble, goldfish: Fish, trending: TrendingUp, arrow: ArrowRight, rug: Armchair, badge: Badge, bug: Bug, coin: CircleDollarSign, clock: Clock3, code: Code2, plant: Leaf, game: Gamepad2, heart: Heart, keyboard: Keyboard, monitor: Monitor, poster: MoonStar, package: Package, palette: Palette, shop: ShoppingBag, brain: Brain, alert: CircleAlert, sun: Sun, terminal: Terminal, trophy: Trophy, close: X, flower: Flower2, rain: CloudRain } satisfies Record<string, LucideIcon>;
 export type IconName = keyof typeof icons;
 export function Icon({ name, size = 22, color = C.ink }: { name: IconName; size?: number; color?: string }) { const Component = icons[name]; return <Component size={size} color={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" accessible={process.env.EXPO_OS === 'web' ? undefined : false} />; }
 export function Label({ style, ...props }: TextProps) { return <Text {...props} style={[styles.text, style]} />; }

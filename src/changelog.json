@@ -1,6 +1,34 @@
 {
   "releases": [
     {
+      "id": "1.1.1",
+      "version": "1.1.1",
+      "title": "Homes, Rides, Nib Mail & Code Along",
+      "subtitle": "Move cities, collect dream rides, open funny dev emails, earn passive income & fix bugs live!",
+      "highlights": [
+        {
+          "icon": "pin",
+          "title": "5 Moveable Homes, Dream Rides & Room Tech",
+          "detail": "Move to Brooklyn, San Francisco, Tokyo, or the Swiss Alps; collect 5 rides up to a Vintage 911; and add an OLED Ultrawide, Smart TV, Loft Bed & Desk Goldfish."
+        },
+        {
+          "icon": "trending",
+          "title": "Passive Side-Project Income & Extra Coffee",
+          "detail": "Launch 4 indie side projects that earn offline coins, and tap the coffee pill anytime to buy extra cups (up to 9!)."
+        },
+        {
+          "icon": "mail",
+          "title": "Nib Mail & Nostalgic Dev Events",
+          "detail": "Read, reply to, and clear 18 randomized dev emails, plus enjoy surprise Hacker News, StackOverflow & Friday deploy popups."
+        },
+        {
+          "icon": "code",
+          "title": "Interactive Code Along, Heatmap & Studio Card",
+          "detail": "Open the Code Along mini-IDE to squash bugs (-10s) or type lines (-4s), track your 28-day green heatmap, and share your Studio Card."
+        }
+      ]
+    },
+    {
       "id": "1.1.0",
       "version": "1.1.0",
       "title": "Your Studio, Your Style",

@@ -112,83 +112,127 @@ const LIVE_HEARTBEATS = [
  'saving local checkpoint... ok',
 ];
 
+// Module-level session store so switching tabs or closing/reopening the console NEVER restarts logs!
+const terminalStore: {
+ sessionKey: string;
+ entries: LogEntry[];
+ step: number;
+ heartbeat: number;
+ nextId: number;
+} = {
+ sessionKey: '',
+ entries: [],
+ step: 0,
+ heartbeat: 0,
+ nextId: 1,
+};
+
 export function TerminalOverlay({
  projectId,
+ startedAt,
  working,
  ready,
  progress,
  playerName,
+ homeHost = 'studio',
+ homeCity = 'Hometown',
+ activeRideName,
  rank,
  streak,
  completed,
  onOpenProjects,
 }: {
  projectId?: string;
+ startedAt?: number;
  working: boolean;
  ready: boolean;
  progress: number;
  playerName?: string;
+ homeHost?: string;
+ homeCity?: string;
+ activeRideName?: string;
  rank: string;
  streak: number;
  completed: number;
  onOpenProjects: () => void;
 }) {
  const [expanded, setExpanded] = useState(false);
- const [entries, setEntries] = useState<LogEntry[]>([]);
- const nextId = useRef(1);
- const stepRef = useRef(0);
- const heartbeatRef = useRef(0);
- const lastKeyRef = useRef<string>('');
+ const [entries, setEntries] = useState<LogEntry[]>(() => terminalStore.entries);
  const scrollRef = useRef<ScrollView>(null);
 
  const handle = playerName?.trim() ? playerName.trim().toLowerCase().replace(/\s+/g, '-') : '';
- const displayHost = handle ? `${handle}@studio` : 'studio';
+ const displayHost = handle ? `${handle}@${homeHost}` : homeHost;
  const promptStr = handle ? `${handle}:~$` : '$';
 
  function pushEntry(text: string, tone: LogEntry['tone'] = 'info', prompt?: string) {
-  setEntries(prev => {
-   const next = [...prev, { id: nextId.current++, text, tone, prompt }];
-   return next.slice(-18);
-  });
+  const next = [...terminalStore.entries, { id: terminalStore.nextId++, text, tone, prompt }].slice(-22);
+  terminalStore.entries = next;
+  setEntries(next);
  }
 
- // Reset queue ONLY when the active project or working/idle session actually changes (never on expand/collapse!)
+ // Initialize ONLY when a genuinely new project session starts (never when closing/reopening or switching tabs!)
  useEffect(() => {
-  const sessionKey = `${projectId ?? 'idle'}:${working ? 'w' : ready ? 'r' : 'i'}`;
-  if (lastKeyRef.current === sessionKey) return;
-  lastKeyRef.current = sessionKey;
-  stepRef.current = 0;
+  const sessionKey = working && projectId
+   ? `run:${projectId}:${startedAt ?? 0}`
+   : ready && projectId
+   ? `done:${projectId}:${startedAt ?? 0}`
+   : 'idle';
+
+  if (terminalStore.sessionKey === sessionKey) {
+   // Sync local state with persisted store in case component remounted after tab switch
+   setEntries(terminalStore.entries);
+   return;
+  }
+
+  const prevWasSameRun = ready && projectId && terminalStore.sessionKey === `run:${projectId}:${startedAt ?? 0}`;
+  terminalStore.sessionKey = sessionKey;
 
   if (ready) {
+   if (!prevWasSameRun) {
+    const script = buildProjectLogs(projectId ?? 'idle', handle);
+    terminalStore.entries = script.slice(-3).map(item => ({
+     id: terminalStore.nextId++,
+     text: item.text,
+     tone: item.tone,
+     prompt: item.tone === 'cmd' ? promptStr : undefined,
+    }));
+   }
    pushEntry('✔ build succeeded! Ready to collect coins', 'ok', promptStr);
    return;
   }
 
+  terminalStore.step = 0;
+  terminalStore.heartbeat = 0;
   const script = buildProjectLogs(working && projectId ? projectId : 'idle', handle);
-  const first = script[0];
-  if (first) {
-   stepRef.current = 1;
-   pushEntry(first.text, first.tone, first.tone === 'cmd' ? promptStr : undefined);
-  }
- }, [projectId, working, ready, handle, promptStr]);
+  // Seed lines proportional to current progress if returning mid-project
+  const initialCount = working ? Math.max(1, Math.min(script.length, Math.floor(progress * script.length) + 1)) : 1;
+  terminalStore.entries = script.slice(0, initialCount).map(item => ({
+   id: terminalStore.nextId++,
+   text: item.text,
+   tone: item.tone,
+   prompt: item.tone === 'cmd' ? promptStr : undefined,
+  }));
+  terminalStore.step = initialCount;
+  setEntries(terminalStore.entries);
+ }, [projectId, startedAt, working, ready, handle, promptStr]);
 
  // Advance through project logs without repeating from the start
  useEffect(() => {
   if (ready) return;
   const script = buildProjectLogs(working && projectId ? projectId : 'idle', handle);
   const interval = setInterval(() => {
-   if (stepRef.current < script.length) {
-    const item = script[stepRef.current]!;
-    stepRef.current += 1;
+   if (terminalStore.step < script.length) {
+    const item = script[terminalStore.step]!;
+    terminalStore.step += 1;
     pushEntry(item.text, item.tone, item.tone === 'cmd' ? promptStr : undefined);
    } else if (working) {
-    const beat = LIVE_HEARTBEATS[heartbeatRef.current % LIVE_HEARTBEATS.length]!;
-    heartbeatRef.current += 1;
+    const beat = LIVE_HEARTBEATS[terminalStore.heartbeat % LIVE_HEARTBEATS.length]!;
+    terminalStore.heartbeat += 1;
     pushEntry(beat, 'info');
    }
   }, working ? 3400 : 7500);
   return () => clearInterval(interval);
- }, [projectId, working, ready, handle, promptStr]);
+ }, [projectId, startedAt, working, ready, handle, promptStr]);
 
  useEffect(() => {
   if (expanded) {
@@ -198,7 +242,8 @@ export function TerminalOverlay({
 
  function runQuickCmd(cmd: 'status' | 'whoami' | 'coffee' | 'clear') {
   if (cmd === 'clear') {
-   setEntries([{ id: nextId.current++, text: 'console cleared · ready', tone: 'info' }]);
+   terminalStore.entries = [{ id: terminalStore.nextId++, text: 'console cleared · ready', tone: 'info' }];
+   setEntries(terminalStore.entries);
    return;
   }
   if (cmd === 'status') {
@@ -216,14 +261,16 @@ export function TerminalOverlay({
   if (cmd === 'whoami') {
    pushEntry('whoami', 'cmd', promptStr);
    pushEntry(
-    `${handle || 'cozy-dev'} · ${rank} · ${completed} shipped · ${streak}d streak`,
+    `${handle || 'cozy-dev'} @ ${homeCity} · ${rank} · ${completed} shipped · ${streak}d streak${
+     activeRideName ? ` · driving ${activeRideName}` : ''
+    }`,
     'ok'
    );
    return;
   }
   if (cmd === 'coffee') {
    pushEntry('brew --check', 'cmd', promptStr);
-   pushEntry('mug temp: 76°C · studio vibes: immaculate', 'accent');
+   pushEntry(`mug temp: 76°C · ${homeCity} studio vibes: immaculate`, 'accent');
   }
  }
 

@@ -12,6 +12,8 @@ import { Room } from './src/components/room';
 import { Button, C, Coins, Icon, IconName, Label } from './src/components/ui';
 import { Notice, Toast } from './src/components/toast';
 import { Shop } from './src/components/shop';
+import { MailModal } from './src/components/mail';
+import { CodeAlongModal } from './src/components/code-along';
 import { PrivacyPolicy } from './src/components/privacy';
 import { Onboarding } from './src/components/onboarding';
 import { SettingsContent } from './src/components/settings';
@@ -21,34 +23,60 @@ import { OtaUpdateSheet, StoreUpdateScreen } from './src/components/update-promp
 import { LATEST_RELEASE, WhatsNewModal } from './src/components/whats-new';
 import { useAppUpdates } from './src/utils/updates';
 import { APP_NAME } from './src/config';
+import { getMailTemplate } from './src/game/mail';
+import { pickRandomDevEvent } from './src/game/events';
 import {
  adoptCat,
+ applyDevEventChoice,
  Atmosphere,
  boostProject,
  buy,
+ buyEnergyRefill,
+ buyOrSelectHome,
+ buyOrSelectRide,
+ buyVenture,
  claim,
  claimMilestone,
+ clearReadMail,
+ codeAlongFixBug,
+ codeAlongTap,
+ COFFEE_REFILL_PRICE,
+ collectPassive,
  completeOnboarding,
  CURRENT_ONBOARDING_VERSION,
+ deleteMail,
+ deliverRandomMail,
  developerRank,
  DeveloperStyle,
  energyStatus,
  ENERGY_CAP,
+ ENERGY_MAX_STOCK,
+ ensureStarterMail,
  freshSave,
+ HomeId,
+ HOMES,
  ITEMS,
+ markAllMailRead,
+ markMailRead,
  markReleaseSeen,
  MILESTONES,
  MilestoneId,
  multiplier,
  parseSave,
+ pendingPassiveCoins,
  progress,
  PROJECTS,
+ replyToMail,
+ RideId,
+ RIDES,
  Save,
  setAtmosphere,
  setDeveloperStyle,
  setPlayerName,
  startProject,
  toggleDecoration,
+ VentureId,
+ VENTURES,
 } from './src/game/game';
 
 const KEY = 'pocket-dev.save.v1'; // Keep the original key so existing rooms survive updates.
@@ -80,6 +108,8 @@ function Game() {
  const [now, setNow] = useState(Date.now());
  const [tab, setTab] = useState<Tab>('studio');
  const [shop, setShop] = useState(false);
+ const [mailOpen, setMailOpen] = useState(false);
+ const [codeAlongOpen, setCodeAlongOpen] = useState(false);
  const [onboarding, setOnboarding] = useState(false);
  const [whatsNew, setWhatsNew] = useState(false);
  const [isReturningUpdate, setIsReturningUpdate] = useState(false);
@@ -100,6 +130,7 @@ function Game() {
 
  const dismiss = useCallback(() => setNotice(null), []);
  const closeShop = useCallback(() => setShop(false), []);
+ const closeMail = useCallback(() => setMailOpen(false), []);
 
  const notify = useCallback((text: string, error = false, icon: 'brain' | 'coin' = 'brain') => {
   setNotice({ id: ++noticeId.current, text, error, icon });
@@ -111,9 +142,13 @@ function Game() {
   setLoadError(false);
   try {
    const raw = await AsyncStorage.getItem(KEY);
-   const next = raw ? parseSave(raw) : freshSave();
+   const parsed = raw ? parseSave(raw) : freshSave();
+   const next = ensureStarterMail(parsed, Date.now());
    saveRef.current = next;
    setSave(next);
+   if (next !== parsed && raw) {
+    await AsyncStorage.setItem(KEY, JSON.stringify(next));
+   }
    // Show full-screen onboarding automatically for brand-new players
    if (!raw) {
     setIsReturningUpdate(false);
@@ -231,6 +266,105 @@ function Game() {
  }
 
  const readyMilestones = MILESTONES.filter(m => !(save.milestones ?? []).includes(m.id) && m.check(save)).length;
+ const currentHome = HOMES.find(h => h.id === (save.activeHome ?? 'bedroom')) ?? HOMES[0];
+ const currentRide = RIDES.find(r => r.id === save.activeRide);
+
+ function onHome(id: HomeId) {
+  const home = HOMES.find(h => h.id === id)!;
+  const owned = (save!.homes ?? ['bedroom']).includes(id);
+  act(
+   s => buyOrSelectHome(s, id),
+   owned ? `Moved into ${home.name} (${home.city})!` : `Welcome to ${home.city}! Enjoy your new view.`
+  );
+ }
+
+ function onRide(id: RideId) {
+  const ride = RIDES.find(r => r.id === id)!;
+  const owned = (save!.rides ?? []).includes(id);
+  act(
+   s => buyOrSelectRide(s, id),
+   owned ? `Keys grabbed — cruising in your ${ride.name}.` : `${ride.name} parked in your garage!`
+  );
+ }
+
+ function onBuyCoffee() {
+  act(s => buyEnergyRefill(s, Date.now()), 'Fresh espresso poured! +1 coffee boost.');
+ }
+
+ function onVenture(id: VentureId) {
+  const v = VENTURES.find(x => x.id === id)!;
+  act(s => buyVenture(s, id, Date.now()), `${v.name} launched! Earning +${v.coinsPerHour} coins/hr offline.`, 'coin');
+ }
+
+ function onCollectPassive() {
+  const earned = pendingPassiveCoins(save!, Date.now());
+  if (earned <= 0) return;
+  act(s => collectPassive(s, Date.now()), `Collected ${earned.toLocaleString()} passive coins from your side projects!`, 'coin');
+ }
+
+ function maybeTriggerDevEvent(hasActiveRun: boolean) {
+  if (Math.random() > 0.45) return;
+  const ev = pickRandomDevEvent(hasActiveRun);
+  setTimeout(() => {
+   setAlertConfig({
+    title: ev.title,
+    message: ev.message,
+    icon: ev.icon,
+    iconColor: C.green,
+    options: ev.choices.map(ch => ({
+     text: ch.label,
+     style: 'default' as const,
+     onPress: () => {
+      act(
+       s => applyDevEventChoice(s, ch.reward, Date.now()),
+       ch.toast,
+       ch.reward.kind === 'coins' ? 'coin' : 'brain'
+      );
+     },
+    })),
+   });
+  }, 900);
+ }
+
+ function onShipActive() {
+  if (!active || !ready) return;
+  const reward = active.reward;
+  act(s => claim(s, Date.now()), `Shipped! ${reward} coins in your jar.`, 'coin');
+  maybeTriggerDevEvent(false);
+ }
+
+ function openCoffeeShopPrompt() {
+  const canBuy = energy.count < ENERGY_MAX_STOCK && save!.coins >= COFFEE_REFILL_PRICE;
+  setAlertConfig({
+   title: 'Corner Cafe Coffee',
+   message:
+    energy.count >= ENERGY_MAX_STOCK
+     ? `You’re stocked up with ${energy.count}/${ENERGY_MAX_STOCK} cups of coffee! Spend them to speed up running projects.`
+     : `You have ${energy.count} coffee${energy.count === 1 ? '' : 's'} (free recharge up to ${ENERGY_CAP}${
+        energy.nextRechargeAt ? ` · next in ${refillTime}` : ''
+       }). Buy an extra cup anytime for ${COFFEE_REFILL_PRICE} coins!`,
+   icon: 'coffee',
+   iconColor: C.green,
+   options:
+    energy.count >= ENERGY_MAX_STOCK
+     ? [{ text: 'Got it', style: 'default' }]
+     : [
+        { text: 'Not now', style: 'cancel' },
+        {
+         text: canBuy
+          ? `Buy · ${COFFEE_REFILL_PRICE}`
+          : `Need ${COFFEE_REFILL_PRICE - save!.coins} more coins`,
+         style: 'default',
+         icon: canBuy ? 'coin' : undefined,
+         onPress: () => {
+          if (canBuy) onBuyCoffee();
+         },
+        },
+       ],
+  });
+ }
+
+ const unreadMailCount = (save.inbox ?? []).filter(m => !m.read).length;
 
  return (
   <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -243,22 +377,41 @@ function Game() {
        <Label style={{ color: '#D69F6A', fontSize: 32 }}>.</Label>
       </Label>
      </View>
-     <View style={{ flexDirection: 'row', gap: 7, alignItems: 'center' }}>
-      <View
-       accessibilityLabel={`${energy.count} of ${ENERGY_CAP} energy${
-        energy.nextRechargeAt ? `, next refill in ${refillTime}` : ', fully rested'
-       }`}
-       style={s.energyPill}
+     <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+      <Pressable
+       accessibilityRole="button"
+       accessibilityLabel={`${energy.count} coffee energy. Tap to buy extra coffee.`}
+       onPress={openCoffeeShopPrompt}
+       style={({ pressed }) => [s.energyPill, pressed && { opacity: 0.75 }]}
       >
        <Icon name="coffee" size={16} color={C.green} />
        <Label style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 13, color: C.green }}>
-        {energy.count}/{ENERGY_CAP}
+        {energy.count > ENERGY_CAP ? `${energy.count}` : `${energy.count}/${ENERGY_CAP}`}
        </Label>
-      </View>
+      </Pressable>
 
       <View style={s.wallet}>
        <Coins amount={save.coins} small />
       </View>
+
+      {/* Header Nib Mail Inbox Button with Unread Count Badge */}
+      <Pressable
+       accessibilityRole="button"
+       accessibilityLabel={`Open Nib Mail${unreadMailCount > 0 ? `, ${unreadMailCount} unread emails` : ''}`}
+       onPress={() => setMailOpen(true)}
+       style={({ pressed }) => [
+        s.headerIconBtn,
+        unreadMailCount > 0 && { backgroundColor: '#FDF4EE', borderColor: '#EBC8B8' },
+        { opacity: pressed ? 0.75 : 1 },
+       ]}
+      >
+       <Icon name={unreadMailCount > 0 ? 'mail' : 'mailOpen'} size={18} color={unreadMailCount > 0 ? '#C45F47' : C.ink} />
+       {unreadMailCount > 0 && (
+        <View style={[s.milestoneBadge, { backgroundColor: '#D9755A' }]}>
+         <Label style={s.milestoneBadgeText}>{unreadMailCount}</Label>
+        </View>
+       )}
+      </Pressable>
 
       {/* Header Upgrades & Milestones Icon with Count Badge */}
       <Pressable
@@ -298,24 +451,77 @@ function Game() {
        decorated={save.decorated}
        atmosphere={save.atmosphere ?? 'sunny'}
        developerStyle={save.developerStyle ?? 'curly'}
+       activeHome={currentHome.id}
        onPetCat={() => {
         const msg = CAT_PURRS[Math.floor(Math.random() * CAT_PURRS.length)]!;
         notify(msg);
        }}
       />
 
+      {/* Top-right City & Ride Lifestyle Badge */}
+      <Pressable
+       accessibilityRole="button"
+       accessibilityLabel={`Current home ${currentHome.city}${currentRide ? `, driving ${currentRide.name}` : ''}. Tap to browse homes and rides.`}
+       onPress={() => setShop(true)}
+       style={({ pressed }) => [s.locationPill, pressed && { opacity: 0.8 }]}
+      >
+       <Icon name="pin" size={12} color={C.green} />
+       <Label style={s.locationPillText}>
+        {currentHome.city}
+        {currentRide ? ` · ${currentRide.name}` : ''}
+       </Label>
+      </Pressable>
+
       {/* Simulated Dev Terminal Overlay */}
       <TerminalOverlay
        projectId={active?.projectId}
+       startedAt={active?.startedAt}
        working={!!active && !ready}
        ready={ready}
        progress={p}
        playerName={save.playerName}
+       homeHost={currentHome.host}
+       homeCity={currentHome.city}
+       activeRideName={currentRide?.name}
        rank={developerRank(save.completed)}
        streak={save.streak?.count ?? 0}
        completed={save.completed}
        onOpenProjects={() => setTab('actions')}
       />
+
+      {/* Optional "Code Along" Mini-IDE Trigger while Working */}
+      {!!active && !ready && (
+       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Open Code Along mini-editor to fix bugs and speed up your project"
+        disabled={busy}
+        onPress={() => setCodeAlongOpen(true)}
+        style={({ pressed }) => [
+         s.codeAlongBtn,
+         pressed && { transform: [{ scale: 0.94 }], opacity: 0.9 },
+        ]}
+       >
+        <Icon name="code" size={14} color="#FFFDF4" />
+        <Label style={s.codeAlongText}>Code along</Label>
+       </Pressable>
+      )}
+
+      {(!active || ready) && pendingPassiveCoins(save, now) > 0 && (
+       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Collect passive side-project coins"
+        disabled={busy}
+        onPress={onCollectPassive}
+        style={({ pressed }) => [
+         s.codeAlongBtn,
+         { backgroundColor: '#A47A2A' },
+         pressed && { transform: [{ scale: 0.94 }], opacity: 0.9 },
+        ]}
+       >
+        <Icon name="trending" size={14} color="#FFFDF4" />
+        <Label style={s.codeAlongText}>+{pendingPassiveCoins(save, now)} passive</Label>
+       </Pressable>
+      )}
 
       {/* Floating Status Pill over the Studio */}
       <Pressable
@@ -329,7 +535,7 @@ function Game() {
        }
        onPress={() => {
         if (ready) {
-         act(s => claim(s, Date.now()), `Shipped! ${active!.reward} coins in your jar.`, 'coin');
+         onShipActive();
         } else {
          setTab('actions');
         }
@@ -464,11 +670,11 @@ function Game() {
         <Icon name="award" size={20} color={readyMilestones > 0 ? C.gold : C.ink} />
        </View>
        <View style={{ flex: 1, gap: 2 }}>
-        <Label style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 15 }}>Upgrades & milestones</Label>
+        <Label style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 15 }}>Homes, rides &amp; upgrades</Label>
         <Label style={{ color: C.muted, fontSize: 12 }}>
          {readyMilestones > 0
           ? `${readyMilestones} milestone reward${readyMilestones > 1 ? 's' : ''} ready to claim`
-          : 'Desk gear, room decor & studio milestones'}
+          : 'Move to new cities, buy dream cars & upgrade your desk'}
         </Label>
        </View>
        {readyMilestones > 0 && (
@@ -639,19 +845,68 @@ function Game() {
     </View>
    </View>
 
-   {!shop && !onboarding && <Toast notice={notice} onDismiss={dismiss} />}
+   {!shop && !mailOpen && !onboarding && <Toast notice={notice} onDismiss={dismiss} />}
+
+   <MailModal
+    open={mailOpen}
+    onClose={closeMail}
+    save={save}
+    busy={busy}
+    now={now}
+    onOpenMail={id => act(s => markMailRead(s, id), '')}
+    onReplyMail={(id, idx) => {
+     const msg = (save.inbox ?? []).find(m => m.id === id);
+     const tpl = msg ? getMailTemplate(msg.templateId) : undefined;
+     const opt = tpl?.replies[idx];
+     act(
+      s => replyToMail(s, id, idx, Date.now()),
+      opt?.response ?? 'Reply sent!',
+      opt?.rewardCoins ? 'coin' : 'brain'
+     );
+    }}
+    onDeleteMail={id => act(s => deleteMail(s, id), 'Email deleted.')}
+    onClearRead={() => act(clearReadMail, 'Cleared read emails.')}
+    onMarkAllRead={() => act(markAllMailRead, 'All emails marked as read.')}
+    onCheckMail={() => {
+     if ((save.inbox ?? []).length >= 12) {
+      notify('Your inbox is already cozy and full! Clear some read mail first.');
+      return;
+     }
+     act(s => deliverRandomMail(s, Date.now(), 1), 'You’ve got new mail!');
+    }}
+    notice={notice}
+    onDismiss={dismiss}
+   />
 
    <Shop
     open={shop}
     onClose={closeShop}
     save={save}
     busy={busy}
+    energyCount={energy.count}
     onItem={onItem}
     onAtmosphere={onAtmosphere}
     onAdopt={() => act(adoptCat, 'A little friend. A little more home.')}
     onMilestone={onMilestone}
+    onHome={onHome}
+    onRide={onRide}
+    onBuyCoffee={onBuyCoffee}
+    onVenture={onVenture}
+    onCollectPassive={onCollectPassive}
     notice={notice}
     onDismiss={dismiss}
+   />
+
+   <CodeAlongModal
+    visible={codeAlongOpen && !!active}
+    projectName={current?.name ?? 'Project'}
+    remainingLabel={time}
+    progressPct={p}
+    isReady={ready}
+    onClose={() => setCodeAlongOpen(false)}
+    onTypeLine={() => act(s => codeAlongTap(s, Date.now()), '')}
+    onFixBug={() => act(s => codeAlongFixBug(s, Date.now()), '')}
+    onShip={onShipActive}
    />
 
    <Onboarding
@@ -1030,5 +1285,48 @@ const s = StyleSheet.create({
   borderRadius: 16,
   paddingVertical: 9,
   paddingHorizontal: 12,
+ },
+ locationPill: {
+  position: 'absolute',
+  top: 14,
+  right: 14,
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 5,
+  backgroundColor: '#FFFFFFE8',
+  borderWidth: 1,
+  borderColor: '#DCE5D3',
+  borderRadius: 15,
+  paddingHorizontal: 10,
+  paddingVertical: 6,
+  maxWidth: '52%',
+ },
+ locationPillText: {
+  fontFamily: 'Nunito_800ExtraBold',
+  fontSize: 10.5,
+  color: C.ink,
+  flexShrink: 1,
+ },
+ codeAlongBtn: {
+  position: 'absolute',
+  bottom: 60,
+  alignSelf: 'center',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 6,
+  backgroundColor: C.green,
+  paddingHorizontal: 14,
+  paddingVertical: 8,
+  borderRadius: 18,
+  shadowColor: '#1E3830',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.16,
+  shadowRadius: 8,
+  elevation: 4,
+ },
+ codeAlongText: {
+  fontFamily: 'Nunito_800ExtraBold',
+  fontSize: 12,
+  color: '#FFFDF4',
  },
 });

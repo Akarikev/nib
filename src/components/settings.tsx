@@ -3,8 +3,9 @@ import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDim
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ATMOSPHERES, Atmosphere, DEVELOPER_STYLES, developerRank, DeveloperStyle, ITEMS, MILESTONES, multiplier, Save } from '../game/game';
+import { ATMOSPHERES, Atmosphere, DEVELOPER_STYLES, developerRank, DeveloperStyle, ITEMS, MILESTONES, multiplier, netWorth, recentActivityGrid, Save } from '../game/game';
 import { MascotPreview } from './developer';
+import { StudioCardModal } from './studio-card';
 import { Button, C, Icon, IconName, Label } from './ui';
 import { APP_NAME, APP_VERSION } from '../config';
 import { UpdateState } from '../utils/updates';
@@ -96,6 +97,7 @@ export function SettingsContent({
  updates: UpdateState;
 }) {
  const [section, setSection] = useState<SettingsSection>('menu');
+ const [showCard, setShowCard] = useState(false);
  const [draftName, setDraftName] = useState(save.playerName ?? '');
 
  useEffect(() => {
@@ -395,11 +397,72 @@ export function SettingsContent({
          <Label style={s.statLabel}>Milestones</Label>
         </View>
         <View style={s.statItem}>
-         <Label style={s.statValue}>{save.catOwned ? 'Adopted' : 'Waiting'}</Label>
-         <Label style={s.statLabel}>Desk cat</Label>
+         <Label style={s.statValue}>{netWorth(save).toLocaleString()}</Label>
+         <Label style={s.statLabel}>Net worth</Label>
         </View>
        </View>
       </View>
+
+      {/* Offline GitHub-Style Green Contribution Heatmap (Last 28 Days) */}
+      <View style={s.card}>
+       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ gap: 2 }}>
+         <Label style={s.cardTitle}>Coding contributions</Label>
+         <Label style={{ fontSize: 12, color: C.muted }}>Last 28 days of offline projects shipped</Label>
+        </View>
+        <Icon name="code" size={18} color={C.green} />
+       </View>
+       {(() => {
+        const grid = recentActivityGrid(save, Date.now(), 28);
+        const rows = [0, 1, 2, 3].map(r => grid.slice(r * 7, r * 7 + 7));
+        return (
+         <View style={{ gap: 6 }}>
+          {rows.map((row, rIdx) => (
+           <View key={rIdx} style={{ flexDirection: 'row', gap: 6 }}>
+            {row.map(cell => {
+             const bg =
+              cell.count >= 4
+               ? '#35634F'
+               : cell.count === 3
+               ? '#52876E'
+               : cell.count === 2
+               ? '#80B197'
+               : cell.count === 1
+               ? '#BBD8C2'
+               : '#E9EFE3';
+             return (
+              <View
+               key={cell.day}
+               accessibilityLabel={`${cell.day}: ${cell.count} shipped`}
+               style={{
+                flex: 1,
+                height: 28,
+                borderRadius: 7,
+                backgroundColor: bg,
+                borderWidth: 1,
+                borderColor: cell.count > 0 ? '#0000000A' : '#DDE6D6',
+               }}
+              />
+             );
+            })}
+           </View>
+          ))}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 5, marginTop: 4 }}>
+           <Label style={{ fontSize: 10, color: C.muted }}>Less</Label>
+           {['#E9EFE3', '#BBD8C2', '#80B197', '#52876E', '#35634F'].map(c => (
+            <View key={c} style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: c }} />
+           ))}
+           <Label style={{ fontSize: 10, color: C.muted }}>More</Label>
+          </View>
+         </View>
+        );
+       })()}
+      </View>
+
+      <Button icon="send" onPress={() => setShowCard(true)}>
+       View & share Studio Card
+      </Button>
+      <StudioCardModal visible={showCard} save={save} onClose={() => setShowCard(false)} />
      </>
     )}
 

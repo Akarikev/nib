@@ -68,3 +68,16 @@ Implemented user-requested layout and feature updates while preserving v1 saves:
    - **Updated Play Store Assets & Copy** (`scripts/make-store-assets.ts`, `store-assets/`): Refreshed 1024×500 feature graphic, 4 clipped 1080×1920 screenshots, and "Remember coding by hand" listing copy.
    - **Workflow rule**: Always ask the user before running `git push` or deploying.
 18 Bun tests (93 assertions), TypeScript, and Android/Web exports PASS.
+
+## Checkpoint — 2026-11-23 (v1.1.1 OTA Update: Homes, Dream Rides, Passive Income, Nib Mail, Code Along & Room Tech)
+- **5 Moveable Homes & Live Skyline Views** (`src/game/game.ts`, `src/components/room.tsx`): Starter Bedroom, Brooklyn Brick Loft, San Francisco Bay View (Golden Gate Bridge), Tokyo Skyline Penthouse (Tokyo Tower + Mt. Fuji), and Swiss Alps Glass Cabin.
+- **5 Dream Rides & Net Worth** (`src/game/game.ts`, `src/components/shop.tsx`): Vintage Fixie, Cream City Scooter, Classic Roadster, Electric Coupe, Vintage 911; 5-tab Shop (`Homes`, `Rides`, `Income`, `Studio`, `Goals`).
+- **New Room Tech & Decor** (`src/components/room.tsx`): OLED Ultrawide Monitor (`+75%`), Wall Smart TV, Cozy Loft Bed, Desk Goldfish Bowl.
+- **Passive Side-Project Income** (`src/game/game.ts`, `src/components/shop.tsx`): 4 offline-earning ventures (Open-Source Tip Jar, Dev Sticker Shop, Indie Newsletter, Tiny SaaS Tool; up to 24h banked) with 1-tap collection in Shop & Studio.
+- **Overfill Coffee Buying**: Tap header coffee pill or Corner Cafe to buy `+1` cup for 120 coins anytime up to `ENERGY_MAX_STOCK = 9` (free 30-min offline recharge stays capped at 3).
+- **Nib Mail & Random Dev Events** (`src/game/mail.ts`, `src/components/mail.tsx`, `src/game/events.ts`): 18 randomized dev/promo/cafe/GitHub emails with read/unread/reply/delete/clear, plus nostalgic dev event popups.
+- **Interactive Code Along Mini-IDE** (`src/components/code-along.tsx`): Spot & fix silly 1-line dev bugs (`-10s`) or type lines (`-4s`) while a project is running.
+- **Green 28-Day Contribution Heatmap & Shareable Studio Card** (`src/components/settings.tsx`, `src/components/studio-card.tsx`): Explicit 4×7 green grid + framed developer card with built-in `Share`.
+- **Visual & Stability Fixes**: Module-level `terminalStore` prevents console restart on tab switch; reshaped ergonomic studio chair + grounded seated legs (`room.tsx`, `developer.tsx`); fixed Kai's backwards cap silhouette; responsive button layout in `alert.tsx`.
+- **Runtime version preserved at `1.1.0`** in `app.config.ts` so EAS OTA update (`production` branch) ships cleanly to existing `1.1.0` builds without requiring a new Play Store binary.
+21 Bun tests (135 assertions), TypeScript, and Android/Web exports PASS.

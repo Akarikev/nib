@@ -61,6 +61,7 @@ export function CustomAlert({
  if (!present || !config) return null;
 
  const options = config.options && config.options.length > 0 ? config.options : [{ text: 'OK', style: 'default' as const }];
+ const sideBySide = options.length === 2 && options.every(o => o.text.length <= 13);
  const iconColor = config.iconColor ?? (options.some(o => o.style === 'danger') ? '#B65147' : C.green);
 
  return (
@@ -82,12 +83,12 @@ export function CustomAlert({
       {config.message && <Label style={s.message}>{config.message}</Label>}
      </View>
 
-     <View style={[s.buttons, options.length === 2 && { flexDirection: 'row' }]}>
+     <View style={[s.buttons, sideBySide && { flexDirection: 'row', alignItems: 'stretch' }]}>
       {options.map((opt, idx) => {
        const isDanger = opt.style === 'danger';
        const isCancel = opt.style === 'cancel';
        return (
-        <View key={idx} style={{ flex: options.length === 2 ? 1 : undefined, width: options.length !== 2 ? '100%' : undefined }}>
+        <View key={idx} style={{ flex: sideBySide ? 1 : undefined, width: !sideBySide ? '100%' : undefined }}>
          <Button
           danger={isDanger}
           secondary={isCancel}

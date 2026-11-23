@@ -650,4 +650,29 @@ for (const [name, svg] of shots) {
   await sharp(Buffer.from(svg)).resize(1080, 1920).png().toFile(join(OUT, name));
 }
 
+// 4. Google Play Promotional Content Event Images (zero text, per Play guidelines)
+const eventPrimarySvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="1920" height="1080" fill="#E2EDE2"/>
+  <rect x="0" y="750" width="1920" height="330" fill="#D5BC9E"/>
+  <line x1="0" y1="750" x2="1920" y2="750" stroke="#B5997F" stroke-width="6"/>
+  <line x1="0" y1="840" x2="1920" y2="840" stroke="#C8AB8D" stroke-width="4"/>
+  <line x1="0" y1="940" x2="1920" y2="940" stroke="#C8AB8D" stroke-width="4"/>
+  <!-- Centered studio artwork framed safely above Google Play's bottom tagline overlay -->
+  <svg x="390" y="-10" width="1140" height="1008" viewBox="0 0 400 354">
+    ${roomSvg({ atmosphere: 'sunny', catOwned: true, lamp: true, plant: true, rug: true, poster: true, lights: true, espresso: true, headphones: true, keyboard: true, monitor: true, working: true, screenMode: 'editor' })}
+  </svg>
+</svg>`;
+
+const eventSquareSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <rect width="1080" height="1080" fill="#E2EDE2"/>
+  <rect x="0" y="760" width="1080" height="320" fill="#D5BC9E"/>
+  <line x1="0" y1="760" x2="1080" y2="760" stroke="#B5997F" stroke-width="6"/>
+  <svg x="-30" y="45" width="1140" height="1008" viewBox="0 0 400 354">
+    ${roomSvg({ atmosphere: 'sunny', catOwned: true, lamp: true, plant: true, rug: true, poster: true, lights: true, espresso: true, headphones: true, keyboard: true, monitor: true, working: true, screenMode: 'editor' })}
+  </svg>
+</svg>`;
+
+await sharp(Buffer.from(eventPrimarySvg)).resize(1920, 1080).png().toFile(join(OUT, 'event-primary-1920x1080.png'));
+await sharp(Buffer.from(eventSquareSvg)).resize(1080, 1080).png().toFile(join(OUT, 'event-square-1080x1080.png'));
+
 console.log('Generated updated Play Store assets in store-assets/');

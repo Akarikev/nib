@@ -100,19 +100,19 @@ function SeatedTypingStill({ working, style = 'curly' }: { working: boolean; sty
  const nearKey = useAnimatedProps(() => ({ opacity: working && !reduced ? (1 - tap.get()) * .65 : 0 }));
  const eye = useAnimatedProps(() => ({ opacity: 1 - blink.get() * .85 }));
  return <View pointerEvents="none" style={layer}><Canvas>
-  {/* Lower body: continuous thighs from the hips, knees ahead of the seat. */}
-  <Path d="M175 247 Q180 260 198 263 Q205 264 205 272 L201 295 Q196 298 191 294 L194 272 Q172 270 168 257Z" fill={pal.pants} stroke={ink} strokeWidth="3.5" strokeLinejoin="round" />
-  <Path d="M195 247 Q207 249 224 257 Q231 260 230 270 L226 295 Q220 298 216 294 L218 270 Q201 268 190 260Z" fill={pal.pantsNear} stroke={ink} strokeWidth="3.5" strokeLinejoin="round" />
-  <Path d="M191 293 L190 300 Q201 304 212 300 Q211 295 201 293Z M216 293 L215 300 Q226 304 237 300 Q236 295 226 293Z" fill="#F6E7CF" stroke={ink} strokeWidth="2.5" strokeLinejoin="round" />
+  {/* Lower body: seated squarely on the cushion, fuller trousers bending cleanly at the knees, grounded sneakers clear of chair casters. */}
+  <Path d="M168 245 Q176 250 206 250 Q217 251 217 262 L214 297 Q209 300 203 297 L204 265 Q178 266 166 256Z" fill={pal.pants} stroke={ink} strokeWidth="3.5" strokeLinejoin="round" />
+  <Path d="M164 246 Q182 252 218 253 Q231 254 230 266 L227 297 Q221 300 216 297 L218 268 Q186 268 164 258Z" fill={pal.pantsNear} stroke={ink} strokeWidth="3.5" strokeLinejoin="round" />
+  <Path d="M203 296 L202 303 Q213 307 224 303 Q223 298 214 296Z M216 296 L215 303 Q227 307 239 303 Q238 298 227 296Z" fill="#F6E7CF" stroke={ink} strokeWidth="2.5" strokeLinejoin="round" />
   {/* Far sleeve belongs behind the torso; its elbow turns into a level forearm. */}
   <Path d="M194 190 Q202 187 208 196 L216 207 L231 198 L238 205 L219 217 Q212 221 206 213 L191 201Z" fill={pal.hoodieFar} stroke={ink} strokeWidth="3" strokeLinejoin="round" />
   <Path d="M230 199 Q234 196 240 197 L247 199 Q250 201 247 203 L238 203 L235 206Z" fill={skin} stroke={ink} strokeWidth="2.5" strokeLinejoin="round" />
   <AnimatedPath animatedProps={farFinger} d="M239 199 L246 200" stroke="#A86F52" strokeWidth="1.4" strokeLinecap="round" />
-  {/* Back and shoulders are a single hoodie silhouette, not a sleeve across the neck. */}
-  <Path d="M162 250 Q160 218 167 201 Q173 190 187 191 L204 191 Q216 194 220 207 L222 252 Q194 261 162 250Z" fill={pal.hoodie} stroke={ink} strokeWidth="4" strokeLinejoin="round" />
+  {/* Back and shoulders: gently leaning forward against the chair backrest, resting squarely on the hips. */}
+  <Path d="M162 248 Q159 218 167 201 Q174 191 188 191 L202 191 Q213 194 216 208 L213 249 Q188 257 162 248Z" fill={pal.hoodie} stroke={ink} strokeWidth="4" strokeLinejoin="round" />
   <Path d="M183 184 V197 Q191 204 201 198 V183" fill={skin} stroke={ink} strokeWidth="3" />
-  <Path d="M173 196 Q188 211 205 196 Q202 211 190 212 Q177 211 173 196Z" fill="#A8C5AF" stroke={ink} strokeWidth="2.5" strokeLinejoin="round" />
-  <Path d="M174 240 Q191 245 209 241" fill="none" stroke={pal.hoodStroke} strokeWidth="2.5" strokeLinecap="round" />
+  <Path d="M173 196 Q188 210 204 196 Q201 210 189 211 Q177 210 173 196Z" fill="#A8C5AF" stroke={ink} strokeWidth="2.5" strokeLinejoin="round" />
+  <Path d="M173 239 Q188 243 203 239" fill="none" stroke={pal.hoodStroke} strokeWidth="2.5" strokeLinecap="round" />
   {/* Near shoulder → upper arm → bent elbow → forearm → palm on keyboard. */}
   <Path d="M208 192 Q218 189 223 199 L232 210 L251 199 L258 207 L236 220 Q228 225 220 216 L205 203 Q201 196 208 192Z" fill={pal.hoodie} stroke={ink} strokeWidth="3.5" strokeLinejoin="round" />
   <Path d="M249 200 L255 208" stroke={pal.hoodStroke} strokeWidth="2" strokeLinecap="round" />
@@ -121,8 +121,6 @@ function SeatedTypingStill({ working, style = 'curly' }: { working: boolean; sty
   {/* Contact marks sit on the keys, beneath the fixed fingertips. */}
   <AnimatedPath animatedProps={farKey} d="M240 204 H246" stroke="#FFF1BF" strokeWidth="1.5" strokeLinecap="round" />
   <AnimatedPath animatedProps={nearKey} d="M261 206 H267" stroke="#FFF1BF" strokeWidth="1.5" strokeLinecap="round" />
-  {/* Chair back overlaps the seated hips only, far from elbows and hands. */}
-  <Rect x="166" y="231" width="47" height="34" rx="13" fill="#A4BFAE" stroke={ink} strokeWidth="4" />
   {/* Hairstyle & Head customization */}
   {style === 'curly' ? (
    <Path d="M158 165 Q147 156 153 141 Q149 131 160 127 Q159 115 175 118 Q185 107 196 116 Q211 112 218 125 Q229 128 225 143 L223 166 Q220 187 201 193 Q170 198 158 176Z" fill={pal.hair} stroke={ink} strokeWidth="3" strokeLinejoin="round" />
@@ -139,10 +137,13 @@ function SeatedTypingStill({ working, style = 'curly' }: { working: boolean; sty
    </G>
   ) : (
    <G>
-    {/* Cap visor facing back + cap dome */}
-    <Path d="M155 152 Q144 148 141 155 Q143 160 156 160Z" fill="#D36B58" stroke={ink} strokeWidth="2.5" />
-    <Path d="M156 165 Q152 136 178 128 Q202 124 218 135 Q227 142 225 155 L223 166 Q220 187 201 193 Q170 198 158 176Z" fill="#E67D68" stroke={ink} strokeWidth="3" strokeLinejoin="round" />
-    <Path d="M158 168 Q152 178 164 186 Q174 191 180 186Z" fill={pal.hair} />
+    {/* Kai's dark hair beneath the cap (back of head & nape) */}
+    <Path d="M158 154 L222 149 L223 166 Q220 187 201 193 Q170 198 158 176Z" fill={pal.hair} stroke={ink} strokeWidth="3" strokeLinejoin="round" />
+    {/* Backwards baseball cap sitting cleanly on top of the head */}
+    <Path d="M157 150 L133 155 Q132 162 141 162 L160 158Z" fill="#D36B58" stroke={ink} strokeWidth="2.8" strokeLinejoin="round" />
+    <Path d="M155 157 Q153 127 188 123 Q219 122 226 147 Q204 152 155 157Z" fill="#E67D68" stroke={ink} strokeWidth="3" strokeLinejoin="round" />
+    <Path d="M187 125 Q182 139 183 154" fill="none" stroke="#C7604E" strokeWidth="2" strokeLinecap="round" />
+    <Circle cx="187" cy="122" r="3" fill="#D36B58" stroke={ink} strokeWidth="2" />
    </G>
   )}
   <Path d="M214 141 Q225 145 225 161 L234 166 Q237 170 229 173 L226 179 Q221 189 207 189 L206 177 Q213 168 210 159Z" fill={pal.skin} stroke={ink} strokeWidth="3" strokeLinejoin="round" />
@@ -220,9 +221,10 @@ function LegacyCelebration({ working, celebrating, style = 'curly' }: { working:
      </G>
     ) : (
      <G>
-      <Path d="M155 165 Q144 161 141 168 Q143 173 156 173Z" fill="#D36B58" stroke={ink} strokeWidth="2.5" />
-      <Path d="M156 178 Q152 149 178 141 Q202 137 218 148 Q227 155 225 168 L223 182 Q220 203 201 209 Q170 214 158 192Z" fill="#E67D68" stroke={ink} strokeWidth="3" strokeLinejoin="round" />
-      <Path d="M158 181 Q152 191 164 199 Q174 204 180 199Z" fill={pal.hair} />
+      <Path d="M158 168 L222 163 L223 182 Q220 203 201 209 Q170 214 158 192Z" fill={pal.hair} stroke={ink} strokeWidth="3" strokeLinejoin="round" />
+      <Path d="M157 164 L133 169 Q132 176 141 176 L160 172Z" fill="#D36B58" stroke={ink} strokeWidth="2.8" strokeLinejoin="round" />
+      <Path d="M155 171 Q153 141 188 137 Q219 136 226 161 Q204 166 155 171Z" fill="#E67D68" stroke={ink} strokeWidth="3" strokeLinejoin="round" />
+      <Circle cx="187" cy="136" r="3" fill="#D36B58" stroke={ink} strokeWidth="2" />
      </G>
     )}
     <Path d="M214 157 Q225 161 225 177 L234 182 Q237 186 229 189 L226 195 Q221 205 207 205 L206 193 Q213 184 210 175Z" fill={skin} stroke={ink} strokeWidth="3" strokeLinejoin="round" />

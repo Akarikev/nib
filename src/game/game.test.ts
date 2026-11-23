@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { adoptCat, boostProject, claimMilestone, completeOnboarding, CURRENT_ONBOARDING_VERSION, developerRank, energyStatus, ENERGY_REFILL_MS, multiplier, refillEnergy, buy, claim, freshSave, parseSave, progress, PROJECTS, setAtmosphere, setDeveloperStyle, setPlayerName, startProject, toggleDecoration } from './game';
+import { adoptCat, applyDevEventChoice, boostProject, buyEnergyRefill, buyOrSelectHome, buyOrSelectRide, buyVenture, claimMilestone, clearReadMail, codeAlongFixBug, codeAlongTap, collectPassive, completeOnboarding, CURRENT_ONBOARDING_VERSION, deleteMail, developerRank, energyStatus, ENERGY_REFILL_MS, ensureStarterMail, markMailRead, multiplier, netWorth, passiveRatePerHour, pendingPassiveCoins, recentActivityGrid, refillEnergy, replyToMail, buy, claim, freshSave, parseSave, progress, PROJECTS, setAtmosphere, setDeveloperStyle, setPlayerName, startProject, toggleDecoration } from './game';
 describe('offline project loop', () => {
  test('progress survives serialization and rewards exactly once', () => {
   const active = startProject(freshSave(), 'hello', 1000);
@@ -157,5 +157,93 @@ describe('warm desk lamp and studio milestones', () => {
   expect(developerRank(16)).toBe('Indie Maker');
   expect(developerRank(30)).toBe('Studio Legend');
   expect(() => parseSave(JSON.stringify({ ...done2, streak: { count: -1, lastDay: '2026-11-10' } }))).toThrow();
+ });
+ test('homes, dream rides, instant coffee refill, and net worth persist safely', () => {
+  const rich = { ...freshSave(), coins: 6000, energy: { count: 1, rechargedAt: 1000 } };
+  const sf = buyOrSelectHome(rich, 'sf');
+  expect(sf.coins).toBe(1500);
+  expect(sf.activeHome).toBe('sf');
+  expect(sf.homes).toContain('sf');
+  expect(multiplier(sf)).toBeCloseTo(1.6);
+  // Moving back to starter bedroom is free
+  const backHome = buyOrSelectHome(sf, 'bedroom');
+  expect(backHome.coins).toBe(1500);
+  expect(backHome.activeHome).toBe('bedroom');
+  // Buying a ride adds to garage & multiplier
+  const withBike = buyOrSelectRide(backHome, 'bike');
+  expect(withBike.coins).toBe(1000);
+  expect(withBike.activeRide).toBe('bike');
+  expect(multiplier(withBike)).toBeCloseTo(1.75);
+  // Instant coffee refill spends 120 coins and adds +1 energy
+  const refilled = buyEnergyRefill(withBike, 2000);
+  expect(refilled.coins).toBe(880);
+  expect(refilled.energy?.count).toBe(2);
+  expect(netWorth(refilled)).toBe(880 + 4500 + 500);
+  const loaded = parseSave(JSON.stringify(refilled));
+  expect(loaded.homes).toContain('sf');
+  expect(loaded.rides).toContain('bike');
+  expect(() => parseSave(JSON.stringify({ ...loaded, activeHome: 'mars' }))).toThrow();
+  expect(() => parseSave(JSON.stringify({ ...loaded, activeRide: 'ufo' }))).toThrow();
+ });
+ test('Nib Mail inbox, overfill coffee buying, code-along flow, and contribution heatmap', () => {
+  // Overfill coffee above 3/3 free cap
+  const s0 = { ...freshSave(), coins: 500, energy: { count: 3, rechargedAt: 1000 } };
+  const s1 = buyEnergyRefill(s0, 2000);
+  expect(s1.energy?.count).toBe(4);
+  expect(s1.coins).toBe(380);
+  expect(energyStatus(s1, 9_000_000).count).toBe(4);
+  // Code-along tap shaves 4 seconds
+  const run = startProject(s1, 'bug', 10_000);
+  const faster = codeAlongTap(run, 15_000);
+  expect(faster.active?.duration).toBe(56_000);
+  // Starter mail, read, idempotent reply, clear read
+  const withMail = ensureStarterMail(faster, 20_000);
+  expect(withMail.inbox?.length).toBe(3);
+  expect(withMail.inbox?.filter(m => !m.read).length).toBe(2);
+  const firstUnread = withMail.inbox!.find(m => !m.read)!;
+  const readOne = markMailRead(withMail, firstUnread.id);
+  expect(readOne.inbox!.find(m => m.id === firstUnread.id)?.read).toBe(true);
+  const replied = replyToMail(readOne, firstUnread.id, 0, 25_000);
+  expect(replied.inbox!.find(m => m.id === firstUnread.id)?.replied).toBe(true);
+  expect(replyToMail(replied, firstUnread.id, 0, 26_000)).toBe(replied);
+  const deleted = deleteMail(replied, firstUnread.id);
+  expect(deleted.inbox?.length).toBe(2);
+  const cleared = clearReadMail(deleted);
+  expect(cleared.inbox?.every(m => !m.read)).toBe(true);
+  // Contribution activity recorded on claim
+  const shipped = claim(run, 80_000);
+  const grid = recentActivityGrid(shipped, 80_000, 7);
+  expect(grid.length).toBe(7);
+  expect(grid[grid.length - 1]?.count).toBe(1);
+  expect(parseSave(JSON.stringify(shipped)).inbox?.length).toBeGreaterThanOrEqual(1);
+ });
+ test('OLED/TV/bed/goldfish items, side-project passive income, code-along bug fix, and dev events', () => {
+  let s = { ...freshSave(), coins: 2500 };
+  s = buy(s, 'oled');
+  s = buy(s, 'tv');
+  s = buy(s, 'bed');
+  s = buy(s, 'goldfish');
+  expect(s.owned).toEqual(['oled', 'tv', 'bed', 'goldfish']);
+  expect(s.decorated).toEqual(['tv', 'bed', 'goldfish']);
+  expect(multiplier(s)).toBeCloseTo(1.75);
+  // Launch side-project venture & collect offline passive income
+  const t0 = 1_000_000;
+  const v = buyVenture(s, 'tipjar', t0);
+  expect(v.ventures).toEqual(['tipjar']);
+  expect(passiveRatePerHour(v)).toBe(15);
+  expect(pendingPassiveCoins(v, t0 + 2 * 3_600_000)).toBe(30);
+  const collected = collectPassive(v, t0 + 2 * 3_600_000);
+  expect(collected.coins).toBe(v.coins + 30);
+  expect(pendingPassiveCoins(collected, t0 + 2 * 3_600_000)).toBe(0);
+  // Code-along bug fix shaves 10s
+  const running = startProject(collected, 'bug', t0 + 2 * 3_600_000);
+  const fixed = codeAlongFixBug(running, t0 + 2 * 3_600_000 + 5_000);
+  expect(fixed.active?.duration).toBe(50_000);
+  // Dev event speed & coin choices
+  const sped = applyDevEventChoice(fixed, { kind: 'speed', percent: 0.2 }, t0 + 2 * 3_600_000 + 5_000);
+  expect(sped.active!.duration).toBeLessThan(fixed.active!.duration);
+  const gifted = applyDevEventChoice(sped, { kind: 'coins', amount: 80 }, t0 + 2 * 3_600_000 + 5_000);
+  expect(gifted.coins).toBe(sped.coins + 80);
+  expect(parseSave(JSON.stringify(gifted)).ventures).toEqual(['tipjar']);
  });
 });
