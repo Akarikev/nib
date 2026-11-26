@@ -72,7 +72,7 @@ export function useStudioAudio({
 
  const soundRef = useRef(soundEnabled);
  const hapticsRef = useRef(hapticsEnabled);
- const activeAppRef = useRef(AppState.currentState === 'active');
+ const activeAppRef = useRef(Platform.OS === 'web' ? true : AppState.currentState === 'active');
 
  soundRef.current = soundEnabled;
  hapticsRef.current = hapticsEnabled;
@@ -113,11 +113,29 @@ export function useStudioAudio({
 
   syncAmbience();
   const sub = AppState.addEventListener('change', state => {
-   activeAppRef.current = state === 'active';
+   activeAppRef.current = Platform.OS === 'web' ? state !== 'background' : state === 'active';
    syncAmbience();
   });
+
+  // Web browsers block audio autoplay until the first user click/tap/keypress — unlock immediately on first gesture!
+  const unlockWebAudio = () => {
+   if (soundRef.current && activeAppRef.current) {
+    syncAmbience();
+   }
+  };
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+   window.addEventListener('pointerdown', unlockWebAudio, { passive: true });
+   window.addEventListener('touchstart', unlockWebAudio, { passive: true });
+   window.addEventListener('keydown', unlockWebAudio, { passive: true });
+  }
+
   return () => {
    sub.remove();
+   if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.removeEventListener('pointerdown', unlockWebAudio);
+    window.removeEventListener('touchstart', unlockWebAudio);
+    window.removeEventListener('keydown', unlockWebAudio);
+   }
    try {
     lofi.pause();
     rain.pause();
