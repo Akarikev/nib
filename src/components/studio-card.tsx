@@ -2,8 +2,6 @@ import React, { useRef, useState } from 'react';
 import { Modal, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ViewShot from 'react-native-view-shot';
-import * as Sharing from 'expo-sharing';
-import * as MediaLibrary from 'expo-media-library';
 import {
  DEVELOPER_STYLES,
  HOMES,
@@ -86,6 +84,7 @@ export function StudioCardModal({
     return;
    }
    const uri = await captureCardUri();
+   const Sharing = await import('expo-sharing');
    if (uri && (await Sharing.isAvailableAsync())) {
     await Sharing.shareAsync(uri, {
      mimeType: 'image/png',
@@ -121,6 +120,7 @@ export function StudioCardModal({
     }
     return;
    }
+   const MediaLibrary = await import('expo-media-library');
    const perm = await MediaLibrary.requestPermissionsAsync(true);
    if (!perm.granted) {
     setStatusMsg('Photo permission needed to save directly. Use Share image instead!');
