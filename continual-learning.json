@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-11-23",
+  "updatedAt": "2026-11-26",
   "project": "Nib",
   "goals": [
     "Build a beautiful Android-first offline idle game locally",
@@ -73,10 +73,10 @@
     "Added sticky header with milestone badge, icon-only bottom tab navigation (Studio full-screen edge-to-edge room view, Projects actions view, and Settings view), 3-step animated onboarding flow, OTA + store update checker (expo-updates + version.json), Cozy headphones (+35% earnings), Full studio milestone, and orientation: 'default'"
   ],
   "inProgress": [
-    "v1.1.1 OTA update (21 tests, 135 assertions): 5 moveable homes with live window skylines, 5 dream rides, 4 passive side-project ventures, OLED Ultrawide/Wall Smart TV/Loft Bed/Desk Goldfish, overfill coffee buying (up to 9), Nib Mail (18 random emails), nostalgic dev events, interactive Code Along bug-spotter mini-IDE, fixed 4x7 28-day green contribution heatmap, shareable Studio Card, persistent terminalStore, and fixed chair/seated posture + Kai cap. Publishing EAS OTA update to production branch and pushing nib + nib-site."
+    "v1.2.0 native release (23 tests, 150 assertions): Pannable 3-wing apartment with Entrance Door & interactive City Garage, NibPhone OS (endless iMessages, Calls, 2-game Arcade, Health, Notes, Weather & recurring multi-app notifications), PNG Studio Card save & share (ViewShot + expo-sharing + modern MediaLibrary.Asset.create), 14 offline synthesized WAVs (Lo-Fi beat, soft rain, occasional morning birds, city traffic, natural Clicky Keyboard, victory fanfare, universal tap SFX) + expo-haptics, Auto time-of-day weather, autonomous bed sleep/wake with dimmed lights, and 12 coding projects with Chill/Standard/Pro difficulty. Exporting, pushing nib + nib-site, and launching EAS Android production AAB build."
   ],
   "verification": {
-    "bun test src/game/game.test.ts": "PASS: 21 tests, 135 assertions",
+    "bun test src/game/game.test.ts": "PASS: 23 tests, 150 assertions",
     "bunx expo export --platform android --platform web": "See bun run export",
     "bun run typecheck": "PASS approved-pose opacity-only typing/idle motion",
     "bunx expo-doctor": "20/21 checks pass; sole failure is remote Expo config schema fetch (ENOTFOUND exp.host)",

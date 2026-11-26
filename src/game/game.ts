@@ -1,16 +1,40 @@
 import { DevEventReward } from './events';
 import { getMailTemplate, MAIL_TEMPLATES } from './mail';
 
-export const PROJECTS = [
-  { id: 'hello', name: 'Hello, world', detail: 'One tiny program. One big beginning.', duration: 15_000, reward: 20 },
-  { id: 'bug', name: 'Squash a bug', detail: 'It was a missing semicolon. Probably.', duration: 60_000, reward: 70 },
-  { id: 'playlist', name: 'Lo-fi beat script', detail: 'Code a chill rain-and-piano loop for late focus.', duration: 120_000, reward: 155 },
-  { id: 'site', name: 'Build a little website', detail: 'A cozy corner of the internet.', duration: 300_000, reward: 400 },
-  { id: 'bot', name: 'Train a cozy chatbot', detail: 'Teach a tiny assistant to tell terrible dev puns.', duration: 600_000, reward: 850 },
-  { id: 'app', name: 'Launch a pocket app', detail: 'Smooth buttons, zero clutter, built with love.', duration: 1200_000, reward: 1750 },
-  { id: 'game', name: 'Ship an indie game', detail: 'A small idea, ready for the world.', duration: 1800_000, reward: 2700 },
-  { id: 'os', name: 'Write a tiny OS', detail: 'Bootloader, kernel, and a blinking cursor from scratch.', duration: 3600_000, reward: 6000 },
+export type Difficulty = 'chill' | 'standard' | 'pro';
+export const DIFFICULTIES = [
+ { id: 'chill', name: 'Chill', description: 'Quick, breezy 15s–5m coding tasks for relaxed play.' },
+ { id: 'standard', name: 'Standard', description: 'Balanced mix of short scripts and full indie apps.' },
+ { id: 'pro', name: 'Pro', description: 'Unlocks deep-focus marathons (Game Engine, Tiny OS, Compiler) with huge payouts.' },
+] as const;
+
+export const PROJECTS: {
+ id: string;
+ name: string;
+ detail: string;
+ duration: number;
+ reward: number;
+ tier: Difficulty;
+}[] = [
+  { id: 'hello', name: 'Hello, world', detail: 'One tiny program. One big beginning.', duration: 15_000, reward: 20, tier: 'chill' },
+  { id: 'bug', name: 'Squash a bug', detail: 'It was a missing semicolon. Probably.', duration: 60_000, reward: 70, tier: 'chill' },
+  { id: 'css', name: 'Polish a button', detail: 'Tweak the shadow and border radius until it sparks joy.', duration: 90_000, reward: 115, tier: 'chill' },
+  { id: 'playlist', name: 'Lo-fi beat script', detail: 'Code a chill rain-and-piano loop for late focus.', duration: 120_000, reward: 155, tier: 'chill' },
+  { id: 'site', name: 'Build a little website', detail: 'A cozy corner of the internet.', duration: 300_000, reward: 400, tier: 'standard' },
+  { id: 'cli', name: 'CLI weather tool', detail: 'Fetch rain forecasts right inside your terminal.', duration: 420_000, reward: 580, tier: 'standard' },
+  { id: 'bot', name: 'Train a cozy chatbot', detail: 'Teach a tiny assistant to tell terrible dev puns.', duration: 600_000, reward: 850, tier: 'standard' },
+  { id: 'app', name: 'Launch a pocket app', detail: 'Smooth buttons, zero clutter, built with love.', duration: 1200_000, reward: 1750, tier: 'standard' },
+  { id: 'game', name: 'Ship an indie game', detail: 'A small idea, ready for the world.', duration: 1800_000, reward: 2700, tier: 'pro' },
+  { id: 'engine', name: 'Build a game engine', detail: 'Custom 2D physics, sprites, and silky 60fps loop.', duration: 2700_000, reward: 4400, tier: 'pro' },
+  { id: 'os', name: 'Write a tiny OS', detail: 'Bootloader, kernel, and a blinking cursor from scratch.', duration: 3600_000, reward: 6000, tier: 'pro' },
+  { id: 'compiler', name: 'Custom compiler', detail: 'Lexer, parser, AST, and zero-overhead bytecode.', duration: 5400_000, reward: 9500, tier: 'pro' },
 ];
+
+export function projectsForDifficulty(difficulty?: Difficulty) {
+ if (difficulty === 'chill') return PROJECTS.filter(p => p.tier === 'chill' || p.id === 'site');
+ if (difficulty === 'standard') return PROJECTS.filter(p => p.tier === 'chill' || p.tier === 'standard');
+ return PROJECTS;
+}
 export const ITEMS = [
   { id: 'keyboard', name: 'Clicky keyboard', description: '+25% project earnings', price: 60, slot: 'equipment', bonus: .25 },
   { id: 'headphones', name: 'Cozy headphones', description: '+35% project earnings', price: 140, slot: 'equipment', bonus: .35 },
@@ -68,11 +92,24 @@ export const MILESTONES = [
 ] as const;
 export type MilestoneId = typeof MILESTONES[number]['id'];
 export const ATMOSPHERES = [
+ { id: 'auto', name: 'Auto weather', description: 'Shifts naturally with time of day', icon: 'cloudSun' },
  { id: 'sunny', name: 'Sunny studio', description: 'A little afternoon warmth', icon: 'sun' },
  { id: 'rainy', name: 'Rainy day', description: 'Soft rain, nowhere to rush', icon: 'rain' },
  { id: 'moonlit', name: 'Moonlit nook', description: 'A quiet corner after hours', icon: 'poster' },
 ] as const;
 export type Atmosphere = typeof ATMOSPHERES[number]['id'];
+export type ResolvedAtmosphere = 'sunny' | 'rainy' | 'moonlit';
+
+export function resolveAtmosphere(atmosphere: Atmosphere | undefined, now: number): ResolvedAtmosphere {
+ if (atmosphere === 'sunny' || atmosphere === 'rainy' || atmosphere === 'moonlit') return atmosphere;
+ const d = new Date(now);
+ const hour = d.getHours();
+ if (hour >= 19 || hour < 6) return 'moonlit';
+ // Occasional cozy afternoon/evening showers based on day + 2-hour block
+ const slot = Math.floor(hour / 2) + d.getDate();
+ if (hour >= 13 && slot % 3 === 0) return 'rainy';
+ return 'sunny';
+}
 export const DESK_CAT = { name: 'Desk cat', price: 100, description: 'A sleepy ginger friend for your coffee breaks.' };
 export const ENERGY_CAP = 3;
 export const ENERGY_MAX_STOCK = 9;
@@ -117,6 +154,9 @@ export type Save = {
  lastPassiveAt?: number;
  activity?: Record<string, number>;
  inbox?: MailMessage[];
+ soundEnabled?: boolean;
+ hapticsEnabled?: boolean;
+ difficulty?: Difficulty;
  version: 1;
  coins: number;
  completed: number;
@@ -432,8 +472,24 @@ export function completeOnboarding(save: Save, profile?: { name?: string; style?
 export function markReleaseSeen(save: Save, releaseId: string): Save {
  return save.lastSeenRelease === releaseId ? save : { ...save, lastSeenRelease: releaseId };
 }
+export function setSoundEnabled(save: Save, enabled: boolean): Save {
+ return (save.soundEnabled ?? true) === enabled ? save : { ...save, soundEnabled: enabled };
+}
+export function setHapticsEnabled(save: Save, enabled: boolean): Save {
+ return (save.hapticsEnabled ?? true) === enabled ? save : { ...save, hapticsEnabled: enabled };
+}
+export function setDifficulty(save: Save, difficulty: Difficulty): Save {
+ return DIFFICULTIES.some(d => d.id === difficulty) && save.difficulty !== difficulty ? { ...save, difficulty } : save;
+}
+export function awardArcadeCoins(save: Save, amount: number): Save {
+ const safe = Math.max(0, Math.min(250, Math.floor(amount)));
+ return safe <= 0 ? save : { ...save, coins: save.coins + safe };
+}
 export function parseSave(raw: string): Save {
   const s = JSON.parse(raw);
+  if (s.soundEnabled !== undefined && typeof s.soundEnabled !== 'boolean') throw Error('Invalid sound setting');
+  if (s.hapticsEnabled !== undefined && typeof s.hapticsEnabled !== 'boolean') throw Error('Invalid haptics setting');
+  if (s.difficulty !== undefined && !DIFFICULTIES.some(d => d.id === s.difficulty)) throw Error('Invalid difficulty');
   if (s.onboarded !== undefined && typeof s.onboarded !== 'boolean') throw Error('Invalid onboarding');
   if (s.onboardingVersion !== undefined && (!Number.isInteger(s.onboardingVersion) || s.onboardingVersion < 0)) throw Error('Invalid onboarding version');
   if (s.lastSeenRelease !== undefined && (typeof s.lastSeenRelease !== 'string' || s.lastSeenRelease.length > 32)) throw Error('Invalid release id');

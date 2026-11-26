@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, TextProps, View } from 'react-native';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { default as ArrowRight } from 'lucide-react-native/icons/arrow-right';
 import { default as Armchair } from 'lucide-react-native/icons/armchair';
 import { default as Badge } from 'lucide-react-native/icons/badge';
@@ -61,17 +62,76 @@ import { default as Tv } from 'lucide-react-native/icons/tv';
 import { default as BedDouble } from 'lucide-react-native/icons/bed-double';
 import { default as Fish } from 'lucide-react-native/icons/fish';
 import { default as TrendingUp } from 'lucide-react-native/icons/trending-up';
+import { default as Volume2 } from 'lucide-react-native/icons/volume-2';
+import { default as VolumeX } from 'lucide-react-native/icons/volume-x';
+import { default as Share2 } from 'lucide-react-native/icons/share-2';
+import { default as ImageIcon } from 'lucide-react-native/icons/image';
+import { default as Vibrate } from 'lucide-react-native/icons/vibrate';
+import { default as Phone } from 'lucide-react-native/icons/phone';
+import { default as PhoneOff } from 'lucide-react-native/icons/phone-off';
+import { default as MessageCircle } from 'lucide-react-native/icons/message-circle';
+import { default as CloudSun } from 'lucide-react-native/icons/cloud-sun';
 import type { LucideIcon } from 'lucide-react-native';
+import { playGlobalTap } from '../utils/sound';
 export const C = { ink: '#354F47', muted: '#788A7E', bg: '#F8FAF2', green: '#426E5C', mint: '#E5EEDC', peach: '#F4D0B4', gold: '#A47A2A' };
-const icons = { coffee: Coffee, cat: Cat, lamp: LampDesk, award: Award, check: Check, settings: Settings, house: House, tasks: ListTodo, refresh: RefreshCw, download: Download, headphones: Headphones, book: BookOpen, shield: ShieldCheck, music: Music, bot: Bot, smartphone: Smartphone, cpu: Cpu, flame: Flame, lights: Lightbulb, espresso: CupSoda, back: ArrowLeft, chevron: ChevronRight, user: User, car: Car, bike: Bike, key: KeyRound, pin: MapPin, mountain: Mountain, mail: Mail, mailOpen: MailOpen, reply: Reply, send: Send, zap: Zap, oled: Monitor, tv: Tv, bed: BedDouble, goldfish: Fish, trending: TrendingUp, arrow: ArrowRight, rug: Armchair, badge: Badge, bug: Bug, coin: CircleDollarSign, clock: Clock3, code: Code2, plant: Leaf, game: Gamepad2, heart: Heart, keyboard: Keyboard, monitor: Monitor, poster: MoonStar, package: Package, palette: Palette, shop: ShoppingBag, brain: Brain, alert: CircleAlert, sun: Sun, terminal: Terminal, trophy: Trophy, close: X, flower: Flower2, rain: CloudRain } satisfies Record<string, LucideIcon>;
+const icons = { coffee: Coffee, cat: Cat, lamp: LampDesk, award: Award, check: Check, settings: Settings, house: House, tasks: ListTodo, refresh: RefreshCw, download: Download, headphones: Headphones, book: BookOpen, shield: ShieldCheck, music: Music, bot: Bot, smartphone: Smartphone, cpu: Cpu, flame: Flame, lights: Lightbulb, espresso: CupSoda, back: ArrowLeft, chevron: ChevronRight, user: User, car: Car, bike: Bike, key: KeyRound, pin: MapPin, mountain: Mountain, mail: Mail, mailOpen: MailOpen, reply: Reply, send: Send, zap: Zap, oled: Monitor, tv: Tv, bed: BedDouble, goldfish: Fish, trending: TrendingUp, volumeOn: Volume2, volumeOff: VolumeX, share: Share2, image: ImageIcon, vibrate: Vibrate, phone: Phone, phoneOff: PhoneOff, message: MessageCircle, cloudSun: CloudSun, arrow: ArrowRight, rug: Armchair, badge: Badge, bug: Bug, coin: CircleDollarSign, clock: Clock3, code: Code2, plant: Leaf, game: Gamepad2, heart: Heart, keyboard: Keyboard, monitor: Monitor, poster: MoonStar, package: Package, palette: Palette, shop: ShoppingBag, brain: Brain, alert: CircleAlert, sun: Sun, terminal: Terminal, trophy: Trophy, close: X, flower: Flower2, rain: CloudRain } satisfies Record<string, LucideIcon>;
 export type IconName = keyof typeof icons;
 export function Icon({ name, size = 22, color = C.ink }: { name: IconName; size?: number; color?: string }) { const Component = icons[name]; return <Component size={size} color={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" accessible={process.env.EXPO_OS === 'web' ? undefined : false} />; }
 export function Label({ style, ...props }: TextProps) { return <Text {...props} style={[styles.text, style]} />; }
 export function Button({ children, onPress, disabled = false, secondary = false, danger = false, icon }: { children: React.ReactNode; onPress: () => void; disabled?: boolean; secondary?: boolean; danger?: boolean; icon?: IconName }) {
+ const reduced = useReducedMotion();
+ const scale = useSharedValue(1);
+ const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
  const color = secondary ? C.green : '#FFFDF4';
  const bg = danger ? '#B65147' : secondary ? C.mint : C.green;
- return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.button, { backgroundColor: bg }, disabled && { opacity: .48 }, pressed && { opacity: .75 }]}><Label style={{ fontFamily: 'Nunito_800ExtraBold', color, textAlign: 'center', flexShrink: 1 }}>{children}</Label>{icon && <Icon name={icon} color={color} size={18} />}</Pressable>;
+ const borderColor = danger ? '#9E4239' : secondary ? '#D3E1C8' : '#355B4B';
+ return (
+  <Animated.View style={animStyle}>
+   <Pressable
+    accessibilityRole="button"
+    accessibilityState={{ disabled }}
+    disabled={disabled}
+    onPressIn={() => {
+     if (!reduced && !disabled) scale.set(withSpring(0.965, { dampingRatio: 0.75, duration: 140 }));
+    }}
+    onPressOut={() => {
+     if (!reduced) scale.set(withSpring(1, { dampingRatio: 0.7, duration: 200 }));
+    }}
+    onPress={() => {
+     playGlobalTap();
+     onPress();
+    }}
+    style={({ pressed }) => [
+     styles.button,
+     { backgroundColor: bg, borderColor },
+     disabled && { opacity: 0.48 },
+     pressed && { opacity: 0.88 },
+    ]}
+   >
+    <Label style={{ fontFamily: 'Nunito_800ExtraBold', color, textAlign: 'center', flexShrink: 1 }}>{children}</Label>
+    {icon && <Icon name={icon} color={color} size={18} />}
+   </Pressable>
+  </Animated.View>
+ );
 }
 export function Coins({ amount, small = false }: { amount: number; small?: boolean }) { return <View accessibilityLabel={`${amount} coins`} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}><Icon name="coin" color={C.gold} size={small ? 15 : 22} /><Label style={{ fontFamily: small ? 'Nunito_800ExtraBold' : 'Fredoka_600SemiBold', color: small ? C.gold : C.ink, fontSize: small ? 13 : 21, fontVariant: ['tabular-nums'] }}>{amount.toLocaleString()}</Label></View>; }
 export function OwnedBadge({ kind }: { kind: 'equipped' | 'placed' | 'owned' }) { return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: kind === 'owned' ? '#EEEDE6' : '#E6EEDC', borderRadius: 12, paddingHorizontal: 9, paddingVertical: 5 }}><Icon name={kind === 'equipped' ? 'keyboard' : kind === 'placed' ? 'flower' : 'package'} size={12} color={C.green} /><Label style={{ fontSize: 10, color: C.green, fontFamily: 'Nunito_800ExtraBold' }}>{kind === 'equipped' ? 'Equipped' : kind === 'placed' ? 'In your room' : 'Yours'}</Label></View>; }
-const styles = StyleSheet.create({ text: { fontFamily: 'Nunito_600SemiBold', fontSize: 16, color: C.ink }, button: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.green, padding: 14, borderRadius: 17, minHeight: 48, justifyContent: 'center' } });
+const styles = StyleSheet.create({
+ text: { fontFamily: 'Nunito_600SemiBold', fontSize: 16, color: C.ink },
+ button: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+  backgroundColor: C.green,
+  padding: 14,
+  borderRadius: 18,
+  minHeight: 48,
+  justifyContent: 'center',
+  borderWidth: 1,
+  shadowColor: '#203A32',
+  shadowOffset: { width: 0, height: 3 },
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  elevation: 2,
+ },
+});

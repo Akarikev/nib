@@ -154,9 +154,52 @@ function SeatedTypingStill({ working, style = 'curly' }: { working: boolean; sty
  </Canvas></View>;
 }
 
-export function Developer({ working, celebrating, style = 'curly' }: { working: boolean; celebrating: boolean; style?: DevStyle }) {
- // Approved pose stays connected in working and idle; only finger/key cues and blink animate.
- return celebrating ? <LegacyCelebration working={working} celebrating={celebrating} style={style} /> : <SeatedTypingStill working={working} style={style} />;
+function NappingStill({ style = 'curly' }: { style?: DevStyle }) {
+ const pal = PALETTES[style] ?? PALETTES.curly;
+ const reduced = useReducedMotion();
+ const zzz = useSharedValue(0);
+ useEffect(() => {
+  if (reduced) { zzz.set(0); return; }
+  zzz.set(withRepeat(withSequence(withTiming(1, { duration: 1800, easing: ease }), withTiming(0, { duration: 1800, easing: ease })), -1));
+  return () => { cancelAnimation(zzz); };
+ }, [reduced, zzz]);
+ const zzzStyle = useAnimatedStyle(() => ({
+  opacity: 0.45 + zzz.get() * 0.55,
+  transform: [{ translateY: -zzz.get() * 8 }],
+ }));
+ return (
+  <View pointerEvents="none" style={layer}>
+   <Canvas>
+    {/* Seated legs */}
+    <Path d="M168 245 Q176 250 206 250 Q217 251 217 262 L214 297 Q209 300 203 297 L204 265 Q178 266 166 256Z" fill={pal.pants} stroke={ink} strokeWidth="3.5" strokeLinejoin="round" />
+    <Path d="M164 246 Q182 252 218 253 Q231 254 230 266 L227 297 Q221 300 216 297 L218 268 Q186 268 164 258Z" fill={pal.pantsNear} stroke={ink} strokeWidth="3.5" strokeLinejoin="round" />
+    <Path d="M203 296 L202 303 Q213 307 224 303 Q223 298 214 296Z M216 296 L215 303 Q227 307 239 303 Q238 298 227 296Z" fill="#F6E7CF" stroke={ink} strokeWidth="2.5" strokeLinejoin="round" />
+    {/* Torso leaning forward in a cozy desk nap */}
+    <Path d="M162 248 Q162 218 179 205 Q196 196 220 205 L226 246 Q192 257 162 248Z" fill={pal.hoodie} stroke={ink} strokeWidth="4" strokeLinejoin="round" />
+    {/* Folded pillow arms resting on the desk */}
+    <Path d="M196 208 Q216 197 244 202 Q252 206 244 214 L208 219 Q196 218 196 208Z" fill={pal.hoodie} stroke={ink} strokeWidth="3.5" strokeLinejoin="round" />
+    {/* Peaceful snoozing head resting on arms */}
+    <Circle cx="215" cy="186" r="24" fill={pal.hair} stroke={ink} strokeWidth="3" />
+    <Path d="M224 176 Q239 180 237 195 Q233 207 218 206 Q211 196 216 184Z" fill={pal.skin} stroke={ink} strokeWidth="3" strokeLinejoin="round" />
+    {/* Closed peaceful eye & rosy cheek */}
+    <Path d="M225 190 Q229 193 233 190" fill="none" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
+    <Ellipse cx="228" cy="196" rx="4" ry="2.2" fill="#DBA086" />
+   </Canvas>
+   <Animated.View style={[layer, zzzStyle]}>
+    <Canvas>
+     {/* Floating Zzz strokes */}
+     <Path d="M244 162 H253 L244 171 H253" fill="none" stroke="#6B857B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+     <Path d="M256 149 H263 L256 156 H263" fill="none" stroke="#6B857B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </Canvas>
+   </Animated.View>
+  </View>
+ );
+}
+
+export function Developer({ working, celebrating, napping = false, style = 'curly' }: { working: boolean; celebrating: boolean; napping?: boolean; style?: DevStyle }) {
+ if (celebrating) return <LegacyCelebration working={working} celebrating={celebrating} style={style} />;
+ if (napping && !working) return <NappingStill style={style} />;
+ return <SeatedTypingStill working={working} style={style} />;
 }
 
 // All movement uses transforms on transparent SVG layers, driven on the UI thread.
@@ -180,8 +223,8 @@ function LegacyCelebration({ working, celebrating, style = 'curly' }: { working:
   return () => { [lift, typing, breath, jump].forEach(cancelAnimation); };
  }, [working, celebrating, reduced, lift, typing, breath, jump]);
  const bodyStyle = useAnimatedStyle(() => ({ transform: [{ translateX: celebrating ? 46 : 0 }, { translateY: jump.get() - breath.get() * .8 }] }));
- const leftStyle = useAnimatedStyle(() => ({ transformOrigin: '41.5% 61%', transform: [{ translateY: working ? typing.get() * 1.3 : 0 }, { rotate: `${lift.get() * 150}deg` }] }));
- const rightStyle = useAnimatedStyle(() => ({ transformOrigin: '53.5% 61%', transform: [{ translateY: working ? -typing.get() * 1.3 : 0 }, { rotate: `${-lift.get() * 150}deg` }] }));
+ const leftStyle = useAnimatedStyle(() => ({ transform: [{ translateY: celebrating ? -lift.get() * 4 : 0 }] }));
+ const rightStyle = useAnimatedStyle(() => ({ transform: [{ translateY: celebrating ? -lift.get() * 4 : 0 }] }));
  return <Animated.View pointerEvents="none" style={[layer, bodyStyle]}>
   <Canvas>
    {celebrating ? <>
@@ -197,17 +240,20 @@ function LegacyCelebration({ working, celebrating, style = 'curly' }: { working:
    <Path d="M157 247 Q157 216 171 208 Q189 201 210 209 Q222 219 221 249 Q193 260 157 247Z" fill={pal.hoodie} stroke={ink} strokeWidth="4" />
    <Path d="M176 213 Q190 224 206 213 M177 242 Q191 247 204 241" fill="none" stroke={pal.hoodStroke} strokeWidth="2.5" strokeLinecap="round" />
    {!celebrating && <Rect x="166" y="231" width="47" height="34" rx="13" fill="#A4BFAE" stroke={ink} strokeWidth="4" />}
-   <Path d="M184 204 V215 Q192 219 199 214 V203" fill={skin} stroke={ink} strokeWidth="3" />
+   <Path d="M184 204 V215 Q192 219 199 214 V203" fill={pal.skin} stroke={ink} strokeWidth="3" />
   </Canvas>
+  {/* Raised victory arms with clearly visible open hands & thumbs! */}
   <Animated.View style={[layer, leftStyle]}><Canvas>
-   <Path d={!celebrating ? 'M166 216 Q182 224 204 208 L220 201' : 'M166 216 Q156 230 170 237'} stroke={ink} strokeWidth="16" fill="none" strokeLinecap="round" />
-   <Path d={!celebrating ? 'M166 216 Q182 224 204 208 L214 204' : 'M166 216 Q156 230 166 235'} stroke={pal.hoodie} strokeWidth="11" fill="none" strokeLinecap="round" />
-   <Ellipse cx={!celebrating ? 221 : 171} cy={!celebrating ? 201 : 238} rx="7" ry="5" fill={skin} stroke={ink} strokeWidth="2.5" />
+   <Path d="M164 216 Q146 202 135 174" stroke={ink} strokeWidth="16" fill="none" strokeLinecap="round" />
+   <Path d="M164 216 Q146 202 136 177" stroke={pal.hoodie} strokeWidth="10.5" fill="none" strokeLinecap="round" />
+   <Circle cx="133" cy="167" r="7.5" fill={pal.skin} stroke={ink} strokeWidth="2.8" />
+   <Path d="M139 169 Q144 166 142 162" fill="none" stroke={ink} strokeWidth="2.4" strokeLinecap="round" />
   </Canvas></Animated.View>
   <Animated.View style={[layer, rightStyle]}><Canvas>
-   <Path d={!celebrating ? 'M214 216 Q234 220 247 201' : 'M214 216 Q228 230 215 238'} stroke={ink} strokeWidth="16" fill="none" strokeLinecap="round" />
-   <Path d={!celebrating ? 'M214 216 Q234 220 244 205' : 'M214 216 Q228 230 220 235'} stroke={pal.hoodie} strokeWidth="11" fill="none" strokeLinecap="round" />
-   <Ellipse cx={!celebrating ? 249 : 214} cy={!celebrating ? 201 : 239} rx="7" ry="5" fill={skin} stroke={ink} strokeWidth="2.5" />
+   <Path d="M216 216 Q234 202 245 174" stroke={ink} strokeWidth="16" fill="none" strokeLinecap="round" />
+   <Path d="M216 216 Q234 202 244 177" stroke={pal.hoodie} strokeWidth="10.5" fill="none" strokeLinecap="round" />
+   <Circle cx="247" cy="167" r="7.5" fill={pal.skin} stroke={ink} strokeWidth="2.8" />
+   <Path d="M241 169 Q236 166 238 162" fill="none" stroke={ink} strokeWidth="2.4" strokeLinecap="round" />
   </Canvas></Animated.View>
   <Canvas>
    {!celebrating ? <>

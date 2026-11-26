@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { adoptCat, applyDevEventChoice, boostProject, buyEnergyRefill, buyOrSelectHome, buyOrSelectRide, buyVenture, claimMilestone, clearReadMail, codeAlongFixBug, codeAlongTap, collectPassive, completeOnboarding, CURRENT_ONBOARDING_VERSION, deleteMail, developerRank, energyStatus, ENERGY_REFILL_MS, ensureStarterMail, markMailRead, multiplier, netWorth, passiveRatePerHour, pendingPassiveCoins, recentActivityGrid, refillEnergy, replyToMail, buy, claim, freshSave, parseSave, progress, PROJECTS, setAtmosphere, setDeveloperStyle, setPlayerName, startProject, toggleDecoration } from './game';
+import { adoptCat, applyDevEventChoice, awardArcadeCoins, boostProject, buyEnergyRefill, buyOrSelectHome, buyOrSelectRide, buyVenture, claimMilestone, clearReadMail, codeAlongFixBug, codeAlongTap, collectPassive, completeOnboarding, CURRENT_ONBOARDING_VERSION, deleteMail, developerRank, energyStatus, ENERGY_REFILL_MS, ensureStarterMail, markMailRead, multiplier, netWorth, passiveRatePerHour, pendingPassiveCoins, projectsForDifficulty, recentActivityGrid, refillEnergy, replyToMail, resolveAtmosphere, buy, claim, freshSave, parseSave, progress, PROJECTS, setAtmosphere, setDeveloperStyle, setDifficulty, setHapticsEnabled, setPlayerName, setSoundEnabled, startProject, toggleDecoration } from './game';
 describe('offline project loop', () => {
  test('progress survives serialization and rewards exactly once', () => {
   const active = startProject(freshSave(), 'hello', 1000);
@@ -133,7 +133,7 @@ describe('warm desk lamp and studio milestones', () => {
   expect(() => parseSave(JSON.stringify({ ...reloaded, playerName: 'a'.repeat(40) }))).toThrow();
  });
  test('expanded projects, espresso/fairy lights, developer rank, and daily coding streak', () => {
-  expect(PROJECTS.length).toBe(8);
+  expect(PROJECTS.length).toBe(12);
   const s0 = buy(buy({ ...freshSave(), coins: 700 }, 'espresso'), 'lights');
   expect(s0.coins).toBe(130);
   expect(multiplier(s0)).toBeCloseTo(1.65);
@@ -245,5 +245,34 @@ describe('warm desk lamp and studio milestones', () => {
   const gifted = applyDevEventChoice(sped, { kind: 'coins', amount: 80 }, t0 + 2 * 3_600_000 + 5_000);
   expect(gifted.coins).toBe(sped.coins + 80);
   expect(parseSave(JSON.stringify(gifted)).ventures).toEqual(['tipjar']);
+ });
+ test('sound and haptics preferences persist safely without breaking v1 saves', () => {
+  const s0 = freshSave();
+  expect(s0.soundEnabled).toBeUndefined();
+  expect(s0.hapticsEnabled).toBeUndefined();
+  const muted = setSoundEnabled(s0, false);
+  const quiet = setHapticsEnabled(muted, false);
+  const loaded = parseSave(JSON.stringify(quiet));
+  expect(loaded.soundEnabled).toBe(false);
+  expect(loaded.hapticsEnabled).toBe(false);
+  expect(() => parseSave(JSON.stringify({ ...loaded, soundEnabled: 'yes' }))).toThrow();
+ });
+ test('auto time-of-day weather and phone arcade coin rewards work safely', () => {
+  const autoSave = setAtmosphere(freshSave(), 'auto');
+  expect(parseSave(JSON.stringify(autoSave)).atmosphere).toBe('auto');
+  const nightMs = new Date(2026, 10, 26, 22, 0, 0).getTime();
+  const morningMs = new Date(2026, 10, 26, 9, 0, 0).getTime();
+  expect(resolveAtmosphere('auto', nightMs)).toBe('moonlit');
+  expect(resolveAtmosphere('auto', morningMs)).toBe('sunny');
+  expect(resolveAtmosphere('rainy', morningMs)).toBe('rainy');
+  const rewarded = awardArcadeCoins(autoSave, 48);
+  expect(rewarded.coins).toBe(48);
+  expect(awardArcadeCoins(rewarded, 9999).coins).toBe(48 + 250);
+  // Difficulty level persistence and task filtering
+  const chill = setDifficulty(rewarded, 'chill');
+  expect(parseSave(JSON.stringify(chill)).difficulty).toBe('chill');
+  expect(projectsForDifficulty('chill').length).toBeLessThan(projectsForDifficulty('pro').length);
+  expect(projectsForDifficulty('pro').length).toBe(12);
+  expect(() => parseSave(JSON.stringify({ ...chill, difficulty: 'extreme' }))).toThrow();
  });
 });

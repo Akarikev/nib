@@ -3,14 +3,14 @@ import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDim
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ATMOSPHERES, Atmosphere, DEVELOPER_STYLES, developerRank, DeveloperStyle, ITEMS, MILESTONES, multiplier, netWorth, recentActivityGrid, Save } from '../game/game';
+import { ATMOSPHERES, Atmosphere, DEVELOPER_STYLES, DIFFICULTIES, Difficulty, developerRank, DeveloperStyle, ITEMS, MILESTONES, multiplier, netWorth, recentActivityGrid, Save } from '../game/game';
 import { MascotPreview } from './developer';
 import { StudioCardModal } from './studio-card';
 import { Button, C, Icon, IconName, Label } from './ui';
 import { APP_NAME, APP_VERSION } from '../config';
 import { UpdateState } from '../utils/updates';
 
-type SettingsSection = 'menu' | 'profile' | 'mood' | 'stats' | 'updates' | 'help' | 'data';
+type SettingsSection = 'menu' | 'profile' | 'mood' | 'difficulty' | 'sound' | 'stats' | 'updates' | 'help' | 'data';
 
 function SectionHeader({ title, subtitle, onBack }: { title: string; subtitle: string; onBack: () => void }) {
  return (
@@ -79,6 +79,9 @@ export function SettingsContent({
  onAtmosphere,
  onDeveloperStyle,
  onPlayerName,
+ onSoundToggle,
+ onHapticsToggle,
+ onDifficulty,
  onReplayOnboarding,
  onOpenWhatsNew,
  onOpenPrivacy,
@@ -90,6 +93,9 @@ export function SettingsContent({
  onAtmosphere: (id: Atmosphere) => void;
  onDeveloperStyle: (style: DeveloperStyle) => void;
  onPlayerName: (name: string) => void;
+ onSoundToggle?: (enabled: boolean) => void;
+ onHapticsToggle?: (enabled: boolean) => void;
+ onDifficulty?: (difficulty: Difficulty) => void;
  onReplayOnboarding: () => void;
  onOpenWhatsNew: () => void;
  onOpenPrivacy: () => void;
@@ -170,6 +176,28 @@ export function SettingsContent({
          title="Studio mood"
          subtitle={`${currentMood.name} · ${currentMood.description}`}
          onPress={() => setSection('mood')}
+        />
+        <View style={s.divider} />
+        <MenuRow
+         icon={(save.soundEnabled ?? true) ? 'volumeOn' : 'volumeOff'}
+         iconBg="#E6EEDC"
+         title="Sound & haptics"
+         subtitle={`${(save.soundEnabled ?? true) ? 'Soundscapes on' : 'Sound muted'} · ${(save.hapticsEnabled ?? true) ? 'Haptics on' : 'Haptics off'}`}
+         onPress={() => setSection('sound')}
+        />
+        <View style={s.divider} />
+        <MenuRow
+         icon="code"
+         iconBg="#F3ECF9"
+         iconColor="#7A62AD"
+         title="Coding difficulty"
+         subtitle={
+          save.difficulty
+           ? `${DIFFICULTIES.find(d => d.id === save.difficulty)?.name ?? 'Standard'} · Changes available coding tasks`
+           : 'Not chosen yet · Tap to pick Chill, Standard or Pro'
+         }
+         badgeDot={!save.difficulty}
+         onPress={() => setSection('difficulty')}
         />
         <View style={s.divider} />
         <MenuRow
@@ -353,6 +381,115 @@ export function SettingsContent({
          </Pressable>
         );
        })}
+      </View>
+     </>
+    )}
+
+    {section === 'difficulty' && (
+     <>
+      <SectionHeader
+       title="Coding difficulty"
+       subtitle="Choose which coding tasks appear on your Projects tab."
+       onBack={() => setSection('menu')}
+      />
+      <View style={{ gap: 10 }}>
+       {DIFFICULTIES.map(d => {
+        const selected = save.difficulty === d.id;
+        return (
+         <Pressable
+          key={d.id}
+          accessibilityRole="radio"
+          accessibilityState={{ checked: selected }}
+          disabled={busy}
+          onPress={() => onDifficulty?.(d.id)}
+          style={[
+           s.card,
+           selected && { borderColor: C.green, backgroundColor: '#F3FAF0' },
+          ]}
+         >
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+           <Label style={s.cardTitle}>{d.name}</Label>
+           {selected && <Icon name="check" size={18} color={C.green} />}
+          </View>
+          <Label style={{ fontSize: 12.5, color: C.muted, lineHeight: 19 }}>{d.description}</Label>
+         </Pressable>
+        );
+       })}
+      </View>
+     </>
+    )}
+
+    {section === 'sound' && (
+     <>
+      <SectionHeader
+       title="Sound & haptics"
+       subtitle="Cozy offline sound effects, rainy ambiance, and tactile feedback."
+       onBack={() => setSection('menu')}
+      />
+      <View style={s.card}>
+       <Pressable
+        accessibilityRole="switch"
+        accessibilityState={{ checked: save.soundEnabled ?? true }}
+        disabled={busy}
+        onPress={() => onSoundToggle?.(!(save.soundEnabled ?? true))}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+       >
+        <View style={[s.iconBox, { backgroundColor: '#E6EEDC' }]}>
+         <Icon name={(save.soundEnabled ?? true) ? 'volumeOn' : 'volumeOff'} size={20} color={C.green} />
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+         <Label style={s.cardTitle}>Soundscapes & SFX</Label>
+         <Label style={{ fontSize: 12, color: C.muted }}>
+          Rain patter in Rainy mood, key clicks, coin chimes & cat purrs.
+         </Label>
+        </View>
+        <View
+         style={{
+          width: 48,
+          height: 28,
+          borderRadius: 14,
+          backgroundColor: (save.soundEnabled ?? true) ? C.green : '#D6DFCE',
+          padding: 3,
+          justifyContent: 'center',
+          alignItems: (save.soundEnabled ?? true) ? 'flex-end' : 'flex-start',
+         }}
+        >
+         <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#FFFDF7' }} />
+        </View>
+       </Pressable>
+
+       <View style={s.divider} />
+
+       <Pressable
+        accessibilityRole="switch"
+        accessibilityState={{ checked: save.hapticsEnabled ?? true }}
+        disabled={busy}
+        onPress={() => onHapticsToggle?.(!(save.hapticsEnabled ?? true))}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+       >
+        <View style={[s.iconBox, { backgroundColor: '#F7EDCE' }]}>
+         <Icon name="vibrate" size={20} color={C.gold} />
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+         <Label style={s.cardTitle}>Tactile haptics</Label>
+         <Label style={{ fontSize: 12, color: C.muted }}>
+          Gentle vibrations on typing, shipping projects & petting your cat.
+         </Label>
+        </View>
+        <View
+         style={{
+          width: 48,
+          height: 28,
+          borderRadius: 14,
+          backgroundColor: (save.hapticsEnabled ?? true) ? C.green : '#D6DFCE',
+          padding: 3,
+          justifyContent: 'center',
+          alignItems: (save.hapticsEnabled ?? true) ? 'flex-end' : 'flex-start',
+         }}
+        >
+         <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#FFFDF7' }} />
+        </View>
+       </Pressable>
       </View>
      </>
     )}

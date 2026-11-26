@@ -14,6 +14,10 @@ import { Notice, Toast } from './src/components/toast';
 import { Shop } from './src/components/shop';
 import { MailModal } from './src/components/mail';
 import { CodeAlongModal } from './src/components/code-along';
+import { FloatPop, FloatPopEvent } from './src/components/float-pop';
+import { NibPhoneModal } from './src/components/phone';
+import { GarageModal } from './src/components/garage';
+import { StudioCardModal } from './src/components/studio-card';
 import { PrivacyPolicy } from './src/components/privacy';
 import { Onboarding } from './src/components/onboarding';
 import { SettingsContent } from './src/components/settings';
@@ -22,6 +26,7 @@ import { TerminalOverlay } from './src/components/terminal';
 import { OtaUpdateSheet, StoreUpdateScreen } from './src/components/update-prompts';
 import { LATEST_RELEASE, WhatsNewModal } from './src/components/whats-new';
 import { useAppUpdates } from './src/utils/updates';
+import { useStudioAudio } from './src/utils/sound';
 import { APP_NAME } from './src/config';
 import { getMailTemplate } from './src/game/mail';
 import { pickRandomDevEvent } from './src/game/events';
@@ -29,6 +34,7 @@ import {
  adoptCat,
  applyDevEventChoice,
  Atmosphere,
+ awardArcadeCoins,
  boostProject,
  buy,
  buyEnergyRefill,
@@ -48,6 +54,8 @@ import {
  deliverRandomMail,
  developerRank,
  DeveloperStyle,
+ Difficulty,
+ DIFFICULTIES,
  energyStatus,
  ENERGY_CAP,
  ENERGY_MAX_STOCK,
@@ -66,13 +74,18 @@ import {
  pendingPassiveCoins,
  progress,
  PROJECTS,
+ projectsForDifficulty,
  replyToMail,
+ resolveAtmosphere,
  RideId,
  RIDES,
  Save,
  setAtmosphere,
  setDeveloperStyle,
+ setDifficulty,
+ setHapticsEnabled,
  setPlayerName,
+ setSoundEnabled,
  startProject,
  toggleDecoration,
  VentureId,
@@ -83,12 +96,16 @@ const KEY = 'pocket-dev.save.v1'; // Keep the original key so existing rooms sur
 const projectIcons: Record<string, IconName> = {
  hello: 'terminal',
  bug: 'bug',
+ css: 'palette',
  playlist: 'music',
  site: 'code',
+ cli: 'terminal',
  bot: 'bot',
  app: 'smartphone',
  game: 'game',
+ engine: 'zap',
  os: 'cpu',
+ compiler: 'cpu',
 };
 const CAT_PURRS = [
  'Purrr… your desk cat curls up closer to your keyboard.',
@@ -109,7 +126,12 @@ function Game() {
  const [tab, setTab] = useState<Tab>('studio');
  const [shop, setShop] = useState(false);
  const [mailOpen, setMailOpen] = useState(false);
+ const [phoneOpen, setPhoneOpen] = useState(false);
+ const [garageOpen, setGarageOpen] = useState(false);
+ const [cardOpen, setCardOpen] = useState(false);
+ const [napping, setNapping] = useState(false);
  const [codeAlongOpen, setCodeAlongOpen] = useState(false);
+ const prevReadyRef = useRef(false);
  const [onboarding, setOnboarding] = useState(false);
  const [whatsNew, setWhatsNew] = useState(false);
  const [isReturningUpdate, setIsReturningUpdate] = useState(false);
@@ -125,16 +147,86 @@ function Game() {
   return false;
  });
  const [notice, setNotice] = useState<Notice>(null);
+ const [floatPop, setFloatPop] = useState<FloatPopEvent>(null);
  const [loadError, setLoadError] = useState(false);
  const noticeId = useRef(0);
+ const popId = useRef(0);
 
  const dismiss = useCallback(() => setNotice(null), []);
  const closeShop = useCallback(() => setShop(false), []);
  const closeMail = useCallback(() => setMailOpen(false), []);
 
+ const popFloat = useCallback((text: string, icon: IconName, tone: 'gold' | 'green' | 'peach' = 'gold') => {
+  setFloatPop({ id: ++popId.current, text, icon, tone });
+ }, []);
+
  const notify = useCallback((text: string, error = false, icon: 'brain' | 'coin' = 'brain') => {
   setNotice({ id: ++noticeId.current, text, error, icon });
  }, []);
+
+ const resolvedAtmosphere = resolveAtmosphere(save?.atmosphere, now);
+ const isWorkingNow = !!(save?.active && progress(save, now) < 1);
+
+ const audio = useStudioAudio({
+  soundEnabled: save?.soundEnabled ?? true,
+  hapticsEnabled: save?.hapticsEnabled ?? true,
+  atmosphere: resolvedAtmosphere,
+  activeHome: save?.activeHome ?? 'bedroom',
+  working: isWorkingNow,
+  hasClickyKeyboard: !!save?.owned.includes('keyboard'),
+ });
+
+ // Autonomous sleep & wake cycle: when resting idle, mascot wanders to bed; after resting, wakes up refreshed!
+ useEffect(() => {
+  if (save?.active) {
+   setNapping(false);
+   return;
+  }
+  if (tab !== 'studio') return;
+  if (!napping) {
+   const idleDelay = 28_000 + Math.floor(Math.random() * 18_000);
+   const timer = setTimeout(() => {
+    setNapping(true);
+    popFloat('Nap time...', 'poster', 'green');
+   }, idleDelay);
+   return () => clearTimeout(timer);
+  }
+  const wakeDelay = 45_000 + Math.floor(Math.random() * 25_000);
+  const wakeTimer = setTimeout(() => {
+   setNapping(false);
+   popFloat('Feeling rested!', 'sun', 'gold');
+  }, wakeDelay);
+  return () => clearTimeout(wakeTimer);
+ }, [save?.active, napping, tab, popFloat]);
+
+ // Prompt the user to pick a coding difficulty if they open Projects without one chosen yet
+ const promptedDifficultyRef = useRef(false);
+ useEffect(() => {
+  if (tab === 'actions' && save && !save.difficulty && !promptedDifficultyRef.current) {
+   promptedDifficultyRef.current = true;
+   setAlertConfig({
+    title: 'Choose your coding pace',
+    message: 'Pick a difficulty level to tailor your coding tasks (you can change this anytime in Settings).',
+    icon: 'code',
+    iconColor: C.green,
+    options: DIFFICULTIES.map(d => ({
+     text: `${d.name} — ${d.id === 'chill' ? 'Quick & cozy' : d.id === 'standard' ? 'Balanced' : 'All tasks + marathons'}`,
+     style: d.id === 'standard' ? ('default' as const) : ('cancel' as const),
+     onPress: () => act(s => setDifficulty(s, d.id), `Difficulty set to ${d.name}!`),
+    })),
+   });
+  }
+ }, [tab, save?.difficulty]);
+ // Play victory fanfare & show notification the moment a running project completes!
+ const currentReady = !!(save?.active && progress(save, now) >= 1);
+ useEffect(() => {
+  if (currentReady && !prevReadyRef.current) {
+   audio.playVictory();
+   popFloat('Project complete!', 'trophy', 'gold');
+   notify('Project finished! Ready to celebrate & ship!', false, 'coin');
+  }
+  prevReadyRef.current = currentReady;
+ }, [currentReady, audio, popFloat, notify]);
 
  const updates = useAppUpdates(notify);
 
@@ -239,6 +331,8 @@ function Game() {
   const item = ITEMS.find(i => i.id === id)!;
   const owned = save!.owned.includes(id);
   const placed = save!.decorated.includes(id);
+  if (owned) audio.playTap();
+  else audio.playBuy();
   act(
    s => (owned ? toggleDecoration(s, id) : buy(s, id)),
    owned
@@ -250,9 +344,12 @@ function Game() {
  }
 
  function onAtmosphere(id: Atmosphere) {
+  audio.playTap();
   act(
    s => setAtmosphere(s, id),
-   id === 'sunny'
+   id === 'auto'
+    ? 'Auto weather on — your studio shifts with time of day.'
+    : id === 'sunny'
     ? 'A little sunshine for your studio.'
     : id === 'rainy'
     ? 'Rain outside. Cozy inside.'
@@ -262,6 +359,7 @@ function Game() {
 
  function onMilestone(id: MilestoneId) {
   const m = MILESTONES.find(x => x.id === id)!;
+  audio.playCoin();
   act(s => claimMilestone(s, id), `${m.name}! ${m.reward} bonus coins in your jar.`, 'coin');
  }
 
@@ -272,6 +370,8 @@ function Game() {
  function onHome(id: HomeId) {
   const home = HOMES.find(h => h.id === id)!;
   const owned = (save!.homes ?? ['bedroom']).includes(id);
+  if (owned) audio.playTap();
+  else audio.playBuy();
   act(
    s => buyOrSelectHome(s, id),
    owned ? `Moved into ${home.name} (${home.city})!` : `Welcome to ${home.city}! Enjoy your new view.`
@@ -281,6 +381,8 @@ function Game() {
  function onRide(id: RideId) {
   const ride = RIDES.find(r => r.id === id)!;
   const owned = (save!.rides ?? []).includes(id);
+  if (owned) audio.playTap();
+  else audio.playBuy();
   act(
    s => buyOrSelectRide(s, id),
    owned ? `Keys grabbed — cruising in your ${ride.name}.` : `${ride.name} parked in your garage!`
@@ -288,17 +390,21 @@ function Game() {
  }
 
  function onBuyCoffee() {
+  audio.playBuy();
   act(s => buyEnergyRefill(s, Date.now()), 'Fresh espresso poured! +1 coffee boost.');
  }
 
  function onVenture(id: VentureId) {
   const v = VENTURES.find(x => x.id === id)!;
+  audio.playBuy();
   act(s => buyVenture(s, id, Date.now()), `${v.name} launched! Earning +${v.coinsPerHour} coins/hr offline.`, 'coin');
  }
 
  function onCollectPassive() {
   const earned = pendingPassiveCoins(save!, Date.now());
   if (earned <= 0) return;
+  audio.playCoin();
+  popFloat(`+${earned.toLocaleString()} passive`, 'trending', 'gold');
   act(s => collectPassive(s, Date.now()), `Collected ${earned.toLocaleString()} passive coins from your side projects!`, 'coin');
  }
 
@@ -329,6 +435,8 @@ function Game() {
  function onShipActive() {
   if (!active || !ready) return;
   const reward = active.reward;
+  audio.playCoin();
+  popFloat(`+${reward.toLocaleString()} coins`, 'coin', 'gold');
   act(s => claim(s, Date.now()), `Shipped! ${reward} coins in your jar.`, 'coin');
   maybeTriggerDevEvent(false);
  }
@@ -381,7 +489,10 @@ function Game() {
       <Pressable
        accessibilityRole="button"
        accessibilityLabel={`${energy.count} coffee energy. Tap to buy extra coffee.`}
-       onPress={openCoffeeShopPrompt}
+       onPress={() => {
+        audio.playTap();
+        openCoffeeShopPrompt();
+       }}
        style={({ pressed }) => [s.energyPill, pressed && { opacity: 0.75 }]}
       >
        <Icon name="coffee" size={16} color={C.green} />
@@ -394,18 +505,21 @@ function Game() {
        <Coins amount={save.coins} small />
       </View>
 
-      {/* Header Nib Mail Inbox Button with Unread Count Badge */}
+      {/* Header NibPhone Button (consolidates Mail, Messages, Calls, Arcade, Weather & Studio Card) */}
       <Pressable
        accessibilityRole="button"
-       accessibilityLabel={`Open Nib Mail${unreadMailCount > 0 ? `, ${unreadMailCount} unread emails` : ''}`}
-       onPress={() => setMailOpen(true)}
+       accessibilityLabel={`Open NibPhone${unreadMailCount > 0 ? `, ${unreadMailCount} unread notifications` : ''}`}
+       onPress={() => {
+        audio.playTap();
+        setPhoneOpen(true);
+       }}
        style={({ pressed }) => [
         s.headerIconBtn,
         unreadMailCount > 0 && { backgroundColor: '#FDF4EE', borderColor: '#EBC8B8' },
         { opacity: pressed ? 0.75 : 1 },
        ]}
       >
-       <Icon name={unreadMailCount > 0 ? 'mail' : 'mailOpen'} size={18} color={unreadMailCount > 0 ? '#C45F47' : C.ink} />
+       <Icon name="smartphone" size={18} color={unreadMailCount > 0 ? '#C45F47' : C.ink} />
        {unreadMailCount > 0 && (
         <View style={[s.milestoneBadge, { backgroundColor: '#D9755A' }]}>
          <Label style={s.milestoneBadgeText}>{unreadMailCount}</Label>
@@ -419,7 +533,10 @@ function Game() {
        accessibilityLabel={`Open upgrades and milestones${
         readyMilestones > 0 ? `, ${readyMilestones} milestone rewards waiting` : ''
        }`}
-       onPress={() => setShop(true)}
+       onPress={() => {
+        audio.playTap();
+        setShop(true);
+       }}
        style={({ pressed }) => [
         s.headerIconBtn,
         readyMilestones > 0 && { backgroundColor: '#F7EDCE', borderColor: '#E5CFA0' },
@@ -446,31 +563,92 @@ function Game() {
        fullScreen
        working={!!active && !ready}
        celebrating={ready || now < celebrateUntil}
+       napping={napping && !active}
        catOwned={!!save.catOwned}
        owned={save.owned}
        decorated={save.decorated}
-       atmosphere={save.atmosphere ?? 'sunny'}
+       atmosphere={resolvedAtmosphere}
        developerStyle={save.developerStyle ?? 'curly'}
        activeHome={currentHome.id}
+       onOpenPhone={() => {
+        audio.playTap();
+        setPhoneOpen(true);
+       }}
+       onOpenGarage={() => {
+        audio.playTap();
+        setGarageOpen(true);
+       }}
+       onToggleNap={() => {
+        audio.playTap();
+        const nextNap = !napping;
+        setNapping(nextNap);
+        if (nextNap) popFloat('Zzz...', 'poster', 'green');
+       }}
        onPetCat={() => {
+        audio.playPurr();
+        popFloat('Purr~', 'cat', 'peach');
         const msg = CAT_PURRS[Math.floor(Math.random() * CAT_PURRS.length)]!;
         notify(msg);
        }}
       />
 
+      {/* Bottom-left Quick Power-Nap Toggle when Resting */}
+      {!active && (
+       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={napping ? 'Wake up from nap' : 'Take a cozy nap'}
+        onPress={() => {
+         audio.playTap();
+         const nextNap = !napping;
+         setNapping(nextNap);
+         if (nextNap) popFloat('Zzz...', 'poster', 'green');
+        }}
+        style={({ pressed }) => [
+         s.napTogglePill,
+         napping && { backgroundColor: '#E6EFE0', borderColor: C.green },
+         pressed && { opacity: 0.8 },
+        ]}
+       >
+        <Icon name={napping ? 'sun' : 'poster'} size={15} color={napping ? C.gold : C.green} />
+       </Pressable>
+      )}
+
       {/* Top-right City & Ride Lifestyle Badge */}
       <Pressable
        accessibilityRole="button"
        accessibilityLabel={`Current home ${currentHome.city}${currentRide ? `, driving ${currentRide.name}` : ''}. Tap to browse homes and rides.`}
-       onPress={() => setShop(true)}
+       onPress={() => {
+        audio.playTap();
+        setShop(true);
+       }}
        style={({ pressed }) => [s.locationPill, pressed && { opacity: 0.8 }]}
       >
        <Icon name="pin" size={12} color={C.green} />
-       <Label style={s.locationPillText}>
+       <Label style={s.locationPillText} numberOfLines={1}>
         {currentHome.city}
         {currentRide ? ` · ${currentRide.name}` : ''}
        </Label>
       </Pressable>
+
+      {/* Bottom-right Quick Sound Mute/Unmute Toggle */}
+      <Pressable
+       accessibilityRole="button"
+       accessibilityLabel={(save.soundEnabled ?? true) ? 'Mute studio sounds' : 'Unmute studio sounds'}
+       disabled={busy}
+       onPress={() => {
+        const nextOn = !(save.soundEnabled ?? true);
+        act(s => setSoundEnabled(s, nextOn), nextOn ? 'Lo-fi & studio sounds on.' : 'Studio sounds muted.');
+       }}
+       style={({ pressed }) => [
+        s.soundTogglePill,
+        !(save.soundEnabled ?? true) && { backgroundColor: '#F3EFE6' },
+        pressed && { opacity: 0.8 },
+       ]}
+      >
+       <Icon name={(save.soundEnabled ?? true) ? 'volumeOn' : 'volumeOff'} size={15} color={(save.soundEnabled ?? true) ? C.green : C.muted} />
+      </Pressable>
+
+      <FloatPop event={floatPop} />
 
       {/* Simulated Dev Terminal Overlay */}
       <TerminalOverlay
@@ -646,7 +824,7 @@ function Game() {
           <Button
            icon="coin"
            disabled={busy}
-           onPress={() => act(s => claim(s, Date.now()), `Shipped! ${active.reward} coins in your jar.`, 'coin')}
+           onPress={onShipActive}
           >
            Collect {active.reward} coins
           </Button>
@@ -663,7 +841,10 @@ function Game() {
       <Pressable
        accessibilityRole="button"
        accessibilityLabel="Open upgrades and milestones"
-       onPress={() => setShop(true)}
+       onPress={() => {
+        audio.playTap();
+        setShop(true);
+       }}
        style={({ pressed }) => [s.shopButton, { opacity: pressed ? 0.75 : 1 }]}
       >
        <View style={s.shopIconWrap}>
@@ -712,11 +893,11 @@ function Game() {
         <Label style={s.subtitle}>One small thing at a time</Label>
         <Label style={{ color: C.muted, fontSize: 12 }}>{multiplier(save).toFixed(2)}× earnings</Label>
        </View>
-       {PROJECTS.map(project => (
+       {projectsForDifficulty(save.difficulty).map(project => (
         <View key={project.id} style={s.card}>
          <View style={s.row}>
           <View style={s.icon}>
-           <Icon name={projectIcons[project.id]} size={26} />
+           <Icon name={projectIcons[project.id] ?? 'code'} size={26} />
           </View>
           <View style={{ flex: 1, gap: 4 }}>
            <Label style={s.cardTitle}>{project.name}</Label>
@@ -724,7 +905,11 @@ function Game() {
             <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
              <Icon name="clock" size={13} color={C.muted} />
              <Label style={{ fontSize: 12, color: C.muted }}>
-              {project.duration < 60000 ? '15 sec' : `${project.duration / 60000} min`}
+              {project.duration < 60000
+               ? `${Math.round(project.duration / 1000)} sec`
+               : project.duration % 60000 === 0
+               ? `${project.duration / 60000} min`
+               : `${(project.duration / 60000).toFixed(1)} min`}
              </Label>
             </View>
             <Coins amount={Math.round(project.reward * multiplier(save))} small />
@@ -737,6 +922,7 @@ function Game() {
           icon={!active ? 'arrow' : undefined}
           disabled={busy || !!active}
           onPress={() => {
+           audio.playKey();
            act(s => startProject(s, project.id, Date.now()), 'Project started. Your little dev has it from here.');
           }}
          >
@@ -767,6 +953,15 @@ function Game() {
        s => setPlayerName(s, name),
        name.trim() ? `Terminal updated for ${name.trim()}!` : 'Nickname cleared.'
       );
+     }}
+     onSoundToggle={(enabled: boolean) => {
+      act(s => setSoundEnabled(s, enabled), enabled ? 'Studio sounds enabled.' : 'Studio sounds muted.');
+     }}
+     onHapticsToggle={(enabled: boolean) => {
+      act(s => setHapticsEnabled(s, enabled), enabled ? 'Tactile haptics enabled.' : 'Tactile haptics turned off.');
+     }}
+     onDifficulty={(d: Difficulty) => {
+      act(s => setDifficulty(s, d), `Coding difficulty set to ${DIFFICULTIES.find(x => x.id === d)?.name ?? d}!`);
      }}
      onReplayOnboarding={() => {
       setIsReturningUpdate(false);
@@ -811,7 +1006,10 @@ function Game() {
       accessibilityRole="tab"
       accessibilityLabel="Studio"
       accessibilityState={{ selected: tab === 'studio' }}
-      onPress={() => setTab('studio')}
+      onPress={() => {
+       audio.playTap();
+       setTab('studio');
+      }}
       style={({ pressed }) => [s.tabBtn, tab === 'studio' && s.tabBtnActive, { opacity: pressed ? 0.8 : 1 }]}
      >
       <Icon name="house" size={22} color={tab === 'studio' ? C.green : C.muted} />
@@ -821,7 +1019,10 @@ function Game() {
       accessibilityRole="tab"
       accessibilityLabel="Projects"
       accessibilityState={{ selected: tab === 'actions' }}
-      onPress={() => setTab('actions')}
+      onPress={() => {
+       audio.playTap();
+       setTab('actions');
+      }}
       style={({ pressed }) => [s.tabBtn, tab === 'actions' && s.tabBtnActive, { opacity: pressed ? 0.8 : 1 }]}
      >
       <View style={{ position: 'relative' }}>
@@ -834,7 +1035,10 @@ function Game() {
       accessibilityRole="tab"
       accessibilityLabel="Settings"
       accessibilityState={{ selected: tab === 'settings' }}
-      onPress={() => setTab('settings')}
+      onPress={() => {
+       audio.playTap();
+       setTab('settings');
+      }}
       style={({ pressed }) => [s.tabBtn, tab === 'settings' && s.tabBtnActive, { opacity: pressed ? 0.8 : 1 }]}
      >
       <View style={{ position: 'relative' }}>
@@ -847,31 +1051,89 @@ function Game() {
 
    {!shop && !mailOpen && !onboarding && <Toast notice={notice} onDismiss={dismiss} />}
 
+   <NibPhoneModal
+    visible={phoneOpen}
+    save={save}
+    resolvedAtmosphere={resolvedAtmosphere}
+    unreadMailCount={unreadMailCount}
+    onClose={() => setPhoneOpen(false)}
+    onOpenMail={() => {
+     audio.playMail();
+     setMailOpen(true);
+    }}
+    onOpenCard={() => setCardOpen(true)}
+    onAtmosphere={onAtmosphere}
+    onToggleSound={() => {
+     const nextOn = !(save.soundEnabled ?? true);
+     act(s => setSoundEnabled(s, nextOn), nextOn ? 'Lo-fi & studio sounds on.' : 'Studio sounds muted.');
+    }}
+    onArcadeReward={coins => {
+     audio.playCoin();
+     popFloat(`+${coins} arcade!`, 'game', 'gold');
+     act(s => awardArcadeCoins(s, coins), `Bug Squash payout! +${coins} coins in your jar.`, 'coin');
+    }}
+    onPlayRing={() => audio.playRing()}
+    onPlayBugSquash={() => audio.playBugFix()}
+    onPlayMail={() => audio.playMail()}
+   />
+
+   <GarageModal
+    visible={garageOpen}
+    save={save}
+    resolvedAtmosphere={resolvedAtmosphere}
+    onClose={() => setGarageOpen(false)}
+    onSelectRide={onRide}
+    onOpenShop={() => setShop(true)}
+    onHonk={() => audio.playHorn()}
+    onCruiseReward={(coins, msg) => {
+     audio.playCoin();
+     popFloat(`+${coins} cruise!`, 'car', 'gold');
+     act(s => awardArcadeCoins(s, coins), msg, 'coin');
+    }}
+   />
+
+   <StudioCardModal visible={cardOpen} save={save} onClose={() => setCardOpen(false)} />
+
    <MailModal
     open={mailOpen}
     onClose={closeMail}
     save={save}
     busy={busy}
     now={now}
-    onOpenMail={id => act(s => markMailRead(s, id), '')}
+    onOpenMail={id => {
+     audio.playMail();
+     act(s => markMailRead(s, id), '');
+    }}
     onReplyMail={(id, idx) => {
      const msg = (save.inbox ?? []).find(m => m.id === id);
      const tpl = msg ? getMailTemplate(msg.templateId) : undefined;
      const opt = tpl?.replies[idx];
+     if (opt?.rewardCoins) audio.playCoin();
+     else audio.playMail();
      act(
       s => replyToMail(s, id, idx, Date.now()),
       opt?.response ?? 'Reply sent!',
       opt?.rewardCoins ? 'coin' : 'brain'
      );
     }}
-    onDeleteMail={id => act(s => deleteMail(s, id), 'Email deleted.')}
-    onClearRead={() => act(clearReadMail, 'Cleared read emails.')}
-    onMarkAllRead={() => act(markAllMailRead, 'All emails marked as read.')}
+    onDeleteMail={id => {
+     audio.playTap();
+     act(s => deleteMail(s, id), 'Email deleted.');
+    }}
+    onClearRead={() => {
+     audio.playTap();
+     act(clearReadMail, 'Cleared read emails.');
+    }}
+    onMarkAllRead={() => {
+     audio.playTap();
+     act(markAllMailRead, 'All emails marked as read.');
+    }}
     onCheckMail={() => {
      if ((save.inbox ?? []).length >= 12) {
       notify('Your inbox is already cozy and full! Clear some read mail first.');
       return;
      }
+     audio.playMail();
      act(s => deliverRandomMail(s, Date.now(), 1), 'You’ve got new mail!');
     }}
     notice={notice}
@@ -886,7 +1148,10 @@ function Game() {
     energyCount={energy.count}
     onItem={onItem}
     onAtmosphere={onAtmosphere}
-    onAdopt={() => act(adoptCat, 'A little friend. A little more home.')}
+    onAdopt={() => {
+     audio.playPurr();
+     act(adoptCat, 'A little friend. A little more home.');
+    }}
     onMilestone={onMilestone}
     onHome={onHome}
     onRide={onRide}
@@ -904,8 +1169,14 @@ function Game() {
     progressPct={p}
     isReady={ready}
     onClose={() => setCodeAlongOpen(false)}
-    onTypeLine={() => act(s => codeAlongTap(s, Date.now()), '')}
-    onFixBug={() => act(s => codeAlongFixBug(s, Date.now()), '')}
+    onTypeLine={() => {
+     audio.playKey();
+     act(s => codeAlongTap(s, Date.now()), '');
+    }}
+    onFixBug={() => {
+     audio.playBugFix();
+     act(s => codeAlongFixBug(s, Date.now()), '');
+    }}
     onShip={onShipActive}
    />
 
@@ -1293,13 +1564,54 @@ const s = StyleSheet.create({
   flexDirection: 'row',
   alignItems: 'center',
   gap: 5,
-  backgroundColor: '#FFFFFFE8',
+  backgroundColor: '#FFFFFFEA',
   borderWidth: 1,
   borderColor: '#DCE5D3',
   borderRadius: 15,
   paddingHorizontal: 10,
   paddingVertical: 6,
-  maxWidth: '52%',
+  maxWidth: '54%',
+  shadowColor: '#203A32',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.06,
+  shadowRadius: 6,
+  elevation: 2,
+ },
+ napTogglePill: {
+  position: 'absolute',
+  bottom: 14,
+  left: 14,
+  width: 36,
+  height: 36,
+  borderRadius: 18,
+  backgroundColor: '#FFFFFFEE',
+  borderWidth: 1,
+  borderColor: '#DCE5D3',
+  alignItems: 'center',
+  justifyContent: 'center',
+  shadowColor: '#203A32',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+  elevation: 3,
+ },
+ soundTogglePill: {
+  position: 'absolute',
+  bottom: 14,
+  right: 14,
+  width: 36,
+  height: 36,
+  borderRadius: 18,
+  backgroundColor: '#FFFFFFEE',
+  borderWidth: 1,
+  borderColor: '#DCE5D3',
+  alignItems: 'center',
+  justifyContent: 'center',
+  shadowColor: '#203A32',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+  elevation: 3,
  },
  locationPillText: {
   fontFamily: 'Nunito_800ExtraBold',
